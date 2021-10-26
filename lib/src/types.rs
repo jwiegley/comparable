@@ -27,7 +27,3 @@ impl<T: Delta> Delta for &T {
         (*self).delta(other)
     }
 }
-
-pub fn assert_changes<T: Delta>(left: &T, right: &T, expected: Option<<T as Delta>::Change>) {
-    pretty_assertions::assert_eq!(expected, left.delta(right))
-}

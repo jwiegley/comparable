@@ -1,7 +1,7 @@
 use crate::types::Delta;
 
 #[derive(PartialEq, Debug)]
-pub struct BoolChange(bool, bool);
+pub struct BoolChange(pub bool, pub bool);
 
 impl Delta for bool {
     type Desc = bool;
@@ -22,7 +22,7 @@ impl Delta for bool {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct U8Change(u8, u8);
+pub struct U8Change(pub u8, pub u8);
 
 impl Delta for u8 {
     type Desc = u8;
@@ -43,7 +43,7 @@ impl Delta for u8 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct I8Change(i8, i8);
+pub struct I8Change(pub i8, pub i8);
 
 impl Delta for i8 {
     type Desc = i8;
@@ -64,7 +64,7 @@ impl Delta for i8 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct U16Change(u16, u16);
+pub struct U16Change(pub u16, pub u16);
 
 impl Delta for u16 {
     type Desc = u16;
@@ -85,7 +85,7 @@ impl Delta for u16 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct I16Change(i16, i16);
+pub struct I16Change(pub i16, pub i16);
 
 impl Delta for i16 {
     type Desc = i16;
@@ -106,7 +106,7 @@ impl Delta for i16 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct U32Change(u32, u32);
+pub struct U32Change(pub u32, pub u32);
 
 impl Delta for u32 {
     type Desc = u32;
@@ -127,7 +127,7 @@ impl Delta for u32 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct I32Change(i32, i32);
+pub struct I32Change(pub i32, pub i32);
 
 impl Delta for i32 {
     type Desc = i32;
@@ -148,7 +148,7 @@ impl Delta for i32 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct U64Change(u64, u64);
+pub struct U64Change(pub u64, pub u64);
 
 impl Delta for u64 {
     type Desc = u64;
@@ -169,7 +169,7 @@ impl Delta for u64 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct I64Change(i64, i64);
+pub struct I64Change(pub i64, pub i64);
 
 impl Delta for i64 {
     type Desc = i64;
@@ -190,7 +190,7 @@ impl Delta for i64 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct UsizeChange(usize, usize);
+pub struct UsizeChange(pub usize, pub usize);
 
 impl Delta for usize {
     type Desc = usize;
@@ -211,7 +211,7 @@ impl Delta for usize {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct IsizeChange(isize, isize);
+pub struct IsizeChange(pub isize, pub isize);
 
 impl Delta for isize {
     type Desc = isize;
@@ -232,7 +232,7 @@ impl Delta for isize {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct F32Change(f32, f32);
+pub struct F32Change(pub f32, pub f32);
 
 impl Delta for f32 {
     type Desc = f32;
@@ -254,7 +254,7 @@ impl Delta for f32 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct F64Change(f64, f64);
+pub struct F64Change(pub f64, pub f64);
 
 impl Delta for f64 {
     type Desc = f64;
@@ -276,7 +276,7 @@ impl Delta for f64 {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct CharChange(char, char);
+pub struct CharChange(pub char, pub char);
 
 impl Delta for char {
     type Desc = char;
@@ -297,7 +297,7 @@ impl Delta for char {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct StringChange(String, String);
+pub struct StringChange(pub String, pub String);
 
 impl Delta for String {
     type Desc = String;

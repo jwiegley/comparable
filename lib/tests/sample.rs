@@ -1,6 +1,10 @@
 use std::collections::{BTreeMap, HashMap};
 
-use crate::types::Delta;
+use delta::*;
+use delta_derive::Delta;
+
+// This 'Foo' is provided to show what #[derive(Delta)] will expand into when
+// applied to the 'Bar' type below.
 
 struct Foo {
     alpha: bool,
@@ -53,4 +57,44 @@ impl Delta for Foo {
             Some(changes)
         }
     }
+}
+
+#[derive(Delta)]
+struct Bar {
+    alpha: bool,
+    beta: Vec<bool>,
+    gamma: HashMap<u64, bool>,
+    delta: BTreeMap<u64, Bar>,
+}
+
+impl Default for Bar {
+    fn default() -> Self {
+        Bar {
+            alpha: false,
+            beta: Vec::new(),
+            gamma: HashMap::new(),
+            delta: BTreeMap::new(),
+        }
+    }
+}
+
+#[test]
+fn test_delta_bar() {
+    let mut x = Bar::default();
+    x.alpha = true;
+    x.beta.push(true);
+    x.gamma.insert(10, true);
+    let mut y = Bar::default();
+    y.alpha = false;
+    x.gamma.insert(10, true);
+    x.gamma.insert(20, false);
+    assert_changes(
+        &x,
+        &y,
+        Some(vec![
+            BarChange::Alpha(BoolChange(true, false)),
+            BarChange::Beta(vec![VecChange::Removed(true)]),
+            BarChange::Gamma(vec![MapChange::Removed(10), MapChange::Removed(20)]),
+        ]),
+    );
 }

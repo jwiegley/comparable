@@ -1,11 +1,6 @@
-[package]
-name = "delta"
-version = "0.0.1"
-authors = ["John Wiegley"]
-edition = "2018"
+[workspace]
 
-[lib]
-path = "src/lib.rs"
-
-[dependencies]
-pretty_assertions = "1.0"
+members = [
+  "macro",
+  "lib",
+]
