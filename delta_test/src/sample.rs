@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
 use delta::*;
-use delta_derive::Delta;
 
 // This 'Foo' is provided to show what #[derive(Delta)] will expand into when
 // applied to the 'Bar' type below.
@@ -24,7 +23,7 @@ impl Default for Foo {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 enum FooChange {
     Alpha(<bool as Delta>::Change),
     Beta(<Vec<bool> as Delta>::Change),
@@ -60,8 +59,24 @@ impl Delta for Foo {
 }
 
 #[derive(Delta)]
+enum MyEnum {
+    One(bool),
+    Two { two: Vec<bool> },
+    Three(Bar),
+    Four,
+}
+
+impl Default for MyEnum {
+    fn default() -> Self {
+        MyEnum::Four
+    }
+}
+
+#[derive(Delta)]
+#[compare_default = true]
 struct Bar {
     alpha: bool,
+    #[delta_ignore]
     beta: Vec<bool>,
     gamma: HashMap<u64, bool>,
     delta: BTreeMap<u64, Bar>,
@@ -78,23 +93,76 @@ impl Default for Bar {
     }
 }
 
+#[derive(Delta)]
+#[compare_default = true]
+struct Baz(bool, bool);
+
+impl Default for Baz {
+    fn default() -> Self {
+        Baz(false, false)
+    }
+}
+
+#[derive(Delta)]
+#[describe_type(())]
+#[describe_body(())]
+struct Quux();
+
+impl Default for Quux {
+    fn default() -> Self {
+        Quux()
+    }
+}
+
+#[derive(Delta, PartialEq, Debug, Clone)]
+struct Empty;
+
+impl Default for Empty {
+    fn default() -> Self {
+        Empty
+    }
+}
+
 #[test]
 fn test_delta_bar() {
-    let mut x = Bar::default();
-    x.alpha = true;
-    x.beta.push(true);
-    x.gamma.insert(10, true);
-    let mut y = Bar::default();
-    y.alpha = false;
-    x.gamma.insert(10, true);
-    x.gamma.insert(20, false);
+    let mut x1 = Bar {
+        alpha: true,
+        ..Bar::default()
+    };
+    x1.beta.push(true);
+    x1.gamma.insert(10, true);
+    let y1 = Bar::default();
+    x1.gamma.insert(10, true);
+    x1.gamma.insert(20, false);
     assert_changes(
-        &x,
-        &y,
-        Some(vec![
+        &MyEnum::Three(x1),
+        &MyEnum::Three(y1),
+        Some(EnumChange::SameVariant(MyEnumChange::Three(Some(vec![
             BarChange::Alpha(BoolChange(true, false)),
-            BarChange::Beta(vec![VecChange::Removed(true)]),
+            // Change doesn't appear because we use #[delta_ignore] above
+            // BarChange::Beta(vec![VecChange::Removed(true)]),
             BarChange::Gamma(vec![MapChange::Removed(10), MapChange::Removed(20)]),
-        ]),
+        ])))),
     );
+    assert_changes(
+        &MyEnum::One(true),
+        &MyEnum::Two { two: vec![false] },
+        Some(EnumChange::DiffVariant(
+            MyEnumDesc::One(true),
+            MyEnumDesc::Two { two: vec![false] },
+        )),
+    );
+    assert_changes(
+        &MyEnum::One(true),
+        &MyEnum::One(false),
+        Some(EnumChange::SameVariant(MyEnumChange::One(Some(
+            BoolChange(true, false),
+        )))),
+    );
+    let x2 = Baz::default();
+    let y2 = Baz::default();
+    assert_changes(&x2, &y2, None);
+    let x3 = Quux::default();
+    let y3 = Quux::default();
+    assert_changes(&x3, &y3, None);
 }

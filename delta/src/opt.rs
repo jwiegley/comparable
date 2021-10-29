@@ -1,6 +1,8 @@
+use serde;
+
 use crate::types::Delta;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum OptionChange<Desc, Change> {
     NoneToSome(Desc),
     SomeToNone(Desc),

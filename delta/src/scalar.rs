@@ -1,6 +1,22 @@
+use serde;
+
 use crate::types::Delta;
 
-#[derive(PartialEq, Debug)]
+impl Delta for () {
+    type Desc = ();
+
+    fn describe(&self) -> Self::Desc {
+        *self
+    }
+
+    type Change = ();
+
+    fn delta(&self, _other: &Self) -> Option<Self::Change> {
+        None
+    }
+}
+
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct BoolChange(pub bool, pub bool);
 
 impl Delta for bool {
@@ -21,7 +37,7 @@ impl Delta for bool {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct U8Change(pub u8, pub u8);
 
 impl Delta for u8 {
@@ -42,7 +58,7 @@ impl Delta for u8 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct I8Change(pub i8, pub i8);
 
 impl Delta for i8 {
@@ -63,7 +79,7 @@ impl Delta for i8 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct U16Change(pub u16, pub u16);
 
 impl Delta for u16 {
@@ -84,7 +100,7 @@ impl Delta for u16 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct I16Change(pub i16, pub i16);
 
 impl Delta for i16 {
@@ -105,7 +121,7 @@ impl Delta for i16 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct U32Change(pub u32, pub u32);
 
 impl Delta for u32 {
@@ -126,7 +142,7 @@ impl Delta for u32 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct I32Change(pub i32, pub i32);
 
 impl Delta for i32 {
@@ -147,7 +163,7 @@ impl Delta for i32 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct U64Change(pub u64, pub u64);
 
 impl Delta for u64 {
@@ -168,7 +184,7 @@ impl Delta for u64 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct I64Change(pub i64, pub i64);
 
 impl Delta for i64 {
@@ -189,7 +205,7 @@ impl Delta for i64 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct UsizeChange(pub usize, pub usize);
 
 impl Delta for usize {
@@ -210,7 +226,7 @@ impl Delta for usize {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct IsizeChange(pub isize, pub isize);
 
 impl Delta for isize {
@@ -231,7 +247,7 @@ impl Delta for isize {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct F32Change(pub f32, pub f32);
 
 impl Delta for f32 {
@@ -253,7 +269,7 @@ impl Delta for f32 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct F64Change(pub f64, pub f64);
 
 impl Delta for f64 {
@@ -275,7 +291,7 @@ impl Delta for f64 {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CharChange(pub char, pub char);
 
 impl Delta for char {
@@ -296,7 +312,7 @@ impl Delta for char {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct StringChange(pub String, pub String);
 
 impl Delta for String {

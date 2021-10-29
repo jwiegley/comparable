@@ -29,20 +29,29 @@ dependencies = [
 
 [[package]]
 name = "delta"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
- "delta-derive",
+ "delta_derive",
  "pretty_assertions",
+ "serde",
 ]
 
 [[package]]
-name = "delta-derive"
-version = "0.0.1"
+name = "delta_derive"
+version = "0.0.2"
 dependencies = [
  "convert_case",
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "delta_test"
+version = "0.0.2"
+dependencies = [
+ "delta",
+ "serde",
 ]
 
 [[package]]
@@ -88,6 +97,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38bc8cc6a5f2e3655e0899c1b848643b2562f853f114bfec7be120678e3ace05"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "serde"
+version = "1.0.130"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.130"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

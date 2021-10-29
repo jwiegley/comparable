@@ -24,6 +24,8 @@ with pkgs; rustPlatform.buildRustPackage rec {
 
   registry = "file://local-registry";
 
+  RUSTC_BOOTSTRAP = 1;
+
   meta = with lib; {
     description = "Differencing data structures to improve testing";
     homepage = https://github.com/jwiegley/delta;

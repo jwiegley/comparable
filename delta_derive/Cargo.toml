@@ -1,15 +1,16 @@
 [package]
-name = "delta-derive"
-version = "0.0.1"
+name = "delta_derive"
+version = "0.0.2"
 authors = ["John Wiegley"]
 edition = "2018"
 
 [lib]
+name = "delta_derive"
 proc-macro = true
 path = "src/lib.rs"
 
 [dependencies]
-syn = "1.0"
+syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
 convert_case = "0.4"
 proc-macro2 = "1.0"

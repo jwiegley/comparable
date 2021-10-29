@@ -1,9 +1,10 @@
+use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 
 use crate::types::Delta;
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum MapChange<Key, Desc, Change> {
     Added(Key, Desc),
     Changed(Key, Change),

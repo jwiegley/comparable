@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-  "macro",
-  "lib",
+  "delta",
+  "delta_derive",
+  "delta_test",
 ]
