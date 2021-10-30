@@ -112,7 +112,8 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 
             let gen = if change_innards.is_empty() {
                 quote! {
-                #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                #[derive(PartialEq, Debug)]
                 #visibility struct #change;
 
                 impl delta::Delta for #name {
@@ -124,14 +125,15 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 
                     type Change = #change;
 
-                    fn delta(&self, _other: &Self) -> Option<Self::Change> {
-                        None
+                    fn delta(&self, _other: &Self) -> delta::Changed<Self::Change> {
+                        delta::Changed::Unchanged
                     }
                 }
                 }
             } else {
                 quote! {
-                #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                #[derive(PartialEq, Debug)]
                 #visibility enum #change {
                     #(#change_innards),*
                 }
@@ -145,7 +147,7 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 
                     type Change = Vec<#change>;
 
-                    fn delta(&self, other: &Self) -> Option<Self::Change> {
+                    fn delta(&self, other: &Self) -> delta::Changed<Self::Change> {
                         let changes: Vec<#change> = vec![
                             #(#delta_innards),*
                         ]
@@ -153,9 +155,9 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                             .flatten()
                             .collect();
                         if changes.is_empty() {
-                            None
+                            delta::Changed::Unchanged
                         } else {
-                            Some(changes)
+                            delta::Changed::Changed(changes)
                         }
                     }
                 }
@@ -193,7 +195,7 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                                 .map(|field| {
                                     let ident = &field.ident;
                                     let ty = &field.ty;
-                                    quote!(#ident: Option<<#ty as delta::Delta>::Change>)
+                                    quote!(#ident: delta::Changed<<#ty as delta::Delta>::Change>)
                                 })
                                 .collect();
                             change_innards.push(quote!(#vname { #(#field_decls),* }));
@@ -230,10 +232,11 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                             delta_innards.push(quote!(
                             (#name::#vname { #(#idents: #self_vars),* },
                              #name::#vname { #(#idents: #other_vars),* }) =>
-                                Some(delta::EnumChange::SameVariant(
-                                    #change::#vname {
-                                        #(#idents: #self_vars.delta(&#other_vars)),*
-                                    }))));
+                                delta::Changed::Changed(
+                                    delta::EnumChange::SameVariant(
+                                        #change::#vname {
+                                            #(#idents: #self_vars.delta(&#other_vars)),*
+                                        }))));
                         }
                         Fields::Unnamed(unnamed) => {
                             let desc_decls: Vec<proc_macro2::TokenStream> = unnamed
@@ -251,7 +254,7 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                                 .iter()
                                 .map(|field| {
                                     let ty = &field.ty;
-                                    quote!(Option<<#ty as delta::Delta>::Change>)
+                                    quote!(delta::Changed<<#ty as delta::Delta>::Change>)
                                 })
                                 .collect();
                             change_innards.push(quote!(#vname(#(#field_decls),*)));
@@ -281,28 +284,34 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                             delta_innards.push(quote!(
                                 (#name::#vname(#(#self_vars),*),
                                  #name::#vname(#(#other_vars),*)) =>
-                                    Some(delta::EnumChange::SameVariant(
-                                        #change::#vname(#(#self_vars.delta(&#other_vars)),*)))));
+                                    delta::Changed::Changed(
+                                        delta::EnumChange::SameVariant(
+                                            #change::#vname(#(#self_vars.delta(&#other_vars)),*)))));
                         }
                         Fields::Unit => {
                             desc_innards.push(quote!(#vname));
                             change_innards.push(quote!(#vname));
                             match_innards.push(quote!(#name::#vname => #desc::#vname));
-                            delta_innards.push(quote!((#name::#vname, #name::#vname) => None));
+                            delta_innards.push(
+                                quote!((#name::#vname, #name::#vname) => delta::Changed::Unchanged),
+                            );
                         }
                     }
                 }
             }
             delta_innards.push(quote!(
-                (_, _) => Some(delta::EnumChange::DiffVariant(
-                    self.describe(), other.describe()))));
+                (_, _) => delta::Changed::Changed(
+                    delta::EnumChange::DiffVariant(
+                        self.describe(), other.describe()))));
             let gen = quote! {
-                #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                #[derive(PartialEq, Debug)]
                 #visibility enum #desc {
                     #(#desc_innards),*
                 }
 
-                #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+                #[derive(PartialEq, Debug)]
                 #visibility enum #change {
                     #(#change_innards),*
                 }
@@ -318,7 +327,7 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 
                     type Change = delta::EnumChange<Self::Desc, #change>;
 
-                    fn delta(&self, other: &Self) -> Option<Self::Change> {
+                    fn delta(&self, other: &Self) -> delta::Changed<Self::Change> {
                         match (self, other) {
                             #(#delta_innards),*
                         }

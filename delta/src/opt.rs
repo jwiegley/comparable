@@ -1,29 +1,33 @@
-use serde;
+// use serde;
 
-use crate::types::Delta;
+use crate::types::{Changed, Delta, EnumChange};
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub enum OptionChange<Desc, Change> {
-    NoneToSome(Desc),
-    SomeToNone(Desc),
-    Some(Change),
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+pub enum OptionDesc<Desc> {
+    Some(Desc),
+    None,
 }
 
 impl<T: Delta> Delta for Option<T> {
-    type Desc = Option<T::Desc>;
+    type Desc = OptionDesc<T::Desc>;
 
     fn describe(&self) -> Self::Desc {
-        self.as_ref().map(|x| x.describe())
+        match self {
+            Some(x) => OptionDesc::Some(x.describe()),
+            None => OptionDesc::None,
+        }
     }
 
-    type Change = OptionChange<T::Desc, T::Change>;
+    type Change = EnumChange<Self::Desc, T::Change>;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         match (self, other) {
-            (None, None) => None,
-            (Some(x), None) => Some(OptionChange::SomeToNone(x.describe())),
-            (None, Some(y)) => Some(OptionChange::SomeToNone(y.describe())),
-            (Some(x), Some(y)) => x.delta(y).map(OptionChange::Some),
+            (None, None) => Changed::Unchanged,
+            (Some(x), Some(y)) => x.delta(y).map(EnumChange::SameVariant),
+            (_, _) => Changed::Changed(EnumChange::DiffVariant(self.describe(), other.describe())),
         }
     }
 }

@@ -23,7 +23,10 @@ impl Default for Foo {
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
 enum FooChange {
     Alpha(<bool as Delta>::Change),
     Beta(<Vec<bool> as Delta>::Change),
@@ -40,7 +43,7 @@ impl Delta for Foo {
 
     type Change = Vec<FooChange>;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         let changes: Vec<FooChange> = vec![
             self.alpha.delta(&other.alpha).map(FooChange::Alpha),
             self.beta.delta(&other.beta).map(FooChange::Beta),
@@ -51,9 +54,9 @@ impl Delta for Foo {
         .flatten()
         .collect();
         if changes.is_empty() {
-            None
+            Changed::Unchanged
         } else {
-            Some(changes)
+            Changed::Changed(changes)
         }
     }
 }
@@ -137,17 +140,19 @@ fn test_delta_bar() {
     assert_changes(
         &MyEnum::Three(x1),
         &MyEnum::Three(y1),
-        Some(EnumChange::SameVariant(MyEnumChange::Three(Some(vec![
-            BarChange::Alpha(BoolChange(true, false)),
-            // Change doesn't appear because we use #[delta_ignore] above
-            // BarChange::Beta(vec![VecChange::Removed(true)]),
-            BarChange::Gamma(vec![MapChange::Removed(10), MapChange::Removed(20)]),
-        ])))),
+        Changed::Changed(EnumChange::SameVariant(MyEnumChange::Three(
+            Changed::Changed(vec![
+                BarChange::Alpha(BoolChange(true, false)),
+                // Change doesn't appear because we use #[delta_ignore] above
+                // BarChange::Beta(vec![VecChange::Removed(true)]),
+                BarChange::Gamma(vec![MapChange::Removed(10), MapChange::Removed(20)]),
+            ]),
+        ))),
     );
     assert_changes(
         &MyEnum::One(true),
         &MyEnum::Two { two: vec![false] },
-        Some(EnumChange::DiffVariant(
+        Changed::Changed(EnumChange::DiffVariant(
             MyEnumDesc::One(true),
             MyEnumDesc::Two { two: vec![false] },
         )),
@@ -155,14 +160,22 @@ fn test_delta_bar() {
     assert_changes(
         &MyEnum::One(true),
         &MyEnum::One(false),
-        Some(EnumChange::SameVariant(MyEnumChange::One(Some(
-            BoolChange(true, false),
-        )))),
+        Changed::Changed(EnumChange::SameVariant(MyEnumChange::One(
+            Changed::Changed(BoolChange(true, false)),
+        ))),
+    );
+    assert_changes(
+        &MyEnum::One(true),
+        &MyEnum::Four,
+        Changed::Changed(EnumChange::DiffVariant(
+            MyEnumDesc::One(true),
+            MyEnumDesc::Four,
+        )),
     );
     let x2 = Baz::default();
     let y2 = Baz::default();
-    assert_changes(&x2, &y2, None);
+    assert_changes(&x2, &y2, Changed::Unchanged);
     let x3 = Quux::default();
     let y3 = Quux::default();
-    assert_changes(&x3, &y3, None);
+    assert_changes(&x3, &y3, Changed::Unchanged);
 }

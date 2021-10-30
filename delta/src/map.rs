@@ -1,10 +1,13 @@
-use serde;
+// use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 
-use crate::types::Delta;
+use crate::types::{Changed, Delta};
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
 pub enum MapChange<Key, Desc, Change> {
     Added(Key, Desc),
     Changed(Key, Change),
@@ -22,7 +25,7 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
 
     type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         changes.append(
             &mut other
@@ -32,7 +35,7 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
                         vo.delta(v)
                             .map(|changes| MapChange::Changed(k.clone(), changes))
                     } else {
-                        Some(MapChange::Added(k.clone(), v.describe()))
+                        Changed::Changed(MapChange::Added(k.clone(), v.describe()))
                     }
                 })
                 .flatten()
@@ -43,18 +46,18 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
                 .iter()
                 .map(|(k, _v)| {
                     if !other.contains_key(k) {
-                        Some(MapChange::Removed(k.clone()))
+                        Changed::Changed(MapChange::Removed(k.clone()))
                     } else {
-                        None
+                        Changed::Unchanged
                     }
                 })
                 .flatten()
                 .collect(),
         );
         if changes.is_empty() {
-            None
+            Changed::Unchanged
         } else {
-            Some(changes)
+            Changed::Changed(changes)
         }
     }
 }
@@ -78,7 +81,7 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for HashMap<Key, Value> {
 
     type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         to_btreemap(self).delta(&to_btreemap(other))
     }
 }

@@ -1,6 +1,6 @@
-use serde;
+// use serde;
 
-use crate::types::Delta;
+use crate::types::{Changed, Delta};
 
 impl Delta for () {
     type Desc = ();
@@ -11,12 +11,15 @@ impl Delta for () {
 
     type Change = ();
 
-    fn delta(&self, _other: &Self) -> Option<Self::Change> {
-        None
+    fn delta(&self, _other: &Self) -> Changed<Self::Change> {
+        Changed::Unchanged
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
 pub struct BoolChange(pub bool, pub bool);
 
 impl Delta for bool {
@@ -28,16 +31,20 @@ impl Delta for bool {
 
     type Change = BoolChange;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(BoolChange(*self, *other))
+            Changed::Changed(BoolChange(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct U8Change(pub u8, pub u8);
 
 impl Delta for u8 {
@@ -49,16 +56,20 @@ impl Delta for u8 {
 
     type Change = U8Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(U8Change(*self, *other))
+            Changed::Changed(U8Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct I8Change(pub i8, pub i8);
 
 impl Delta for i8 {
@@ -70,16 +81,20 @@ impl Delta for i8 {
 
     type Change = I8Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(I8Change(*self, *other))
+            Changed::Changed(I8Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct U16Change(pub u16, pub u16);
 
 impl Delta for u16 {
@@ -91,16 +106,20 @@ impl Delta for u16 {
 
     type Change = U16Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(U16Change(*self, *other))
+            Changed::Changed(U16Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct I16Change(pub i16, pub i16);
 
 impl Delta for i16 {
@@ -112,16 +131,20 @@ impl Delta for i16 {
 
     type Change = I16Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(I16Change(*self, *other))
+            Changed::Changed(I16Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct U32Change(pub u32, pub u32);
 
 impl Delta for u32 {
@@ -133,16 +156,20 @@ impl Delta for u32 {
 
     type Change = U32Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(U32Change(*self, *other))
+            Changed::Changed(U32Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct I32Change(pub i32, pub i32);
 
 impl Delta for i32 {
@@ -154,16 +181,20 @@ impl Delta for i32 {
 
     type Change = I32Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(I32Change(*self, *other))
+            Changed::Changed(I32Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct U64Change(pub u64, pub u64);
 
 impl Delta for u64 {
@@ -175,16 +206,20 @@ impl Delta for u64 {
 
     type Change = U64Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(U64Change(*self, *other))
+            Changed::Changed(U64Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct I64Change(pub i64, pub i64);
 
 impl Delta for i64 {
@@ -196,16 +231,20 @@ impl Delta for i64 {
 
     type Change = I64Change;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(I64Change(*self, *other))
+            Changed::Changed(I64Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct UsizeChange(pub usize, pub usize);
 
 impl Delta for usize {
@@ -217,16 +256,20 @@ impl Delta for usize {
 
     type Change = UsizeChange;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(UsizeChange(*self, *other))
+            Changed::Changed(UsizeChange(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct IsizeChange(pub isize, pub isize);
 
 impl Delta for isize {
@@ -238,16 +281,20 @@ impl Delta for isize {
 
     type Change = IsizeChange;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(IsizeChange(*self, *other))
+            Changed::Changed(IsizeChange(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct F32Change(pub f32, pub f32);
 
 impl Delta for f32 {
@@ -260,16 +307,20 @@ impl Delta for f32 {
     type Change = F32Change;
 
     #[allow(clippy::float_cmp)]
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(F32Change(*self, *other))
+            Changed::Changed(F32Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct F64Change(pub f64, pub f64);
 
 impl Delta for f64 {
@@ -282,16 +333,20 @@ impl Delta for f64 {
     type Change = F64Change;
 
     #[allow(clippy::float_cmp)]
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(F64Change(*self, *other))
+            Changed::Changed(F64Change(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct CharChange(pub char, pub char);
 
 impl Delta for char {
@@ -303,16 +358,20 @@ impl Delta for char {
 
     type Change = CharChange;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(CharChange(*self, *other))
+            Changed::Changed(CharChange(*self, *other))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
+
 pub struct StringChange(pub String, pub String);
 
 impl Delta for String {
@@ -324,11 +383,11 @@ impl Delta for String {
 
     type Change = StringChange;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         if self != other {
-            Some(StringChange(self.to_string(), other.to_string()))
+            Changed::Changed(StringChange(self.to_string(), other.to_string()))
         } else {
-            None
+            Changed::Unchanged
         }
     }
 }

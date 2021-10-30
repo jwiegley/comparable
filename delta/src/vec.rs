@@ -1,8 +1,11 @@
-use serde;
+// use serde;
 
-use crate::types::Delta;
+use crate::types::{Changed, Delta};
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    PartialEq,
+    Debug, // , serde::Serialize, serde::Deserialize
+)]
 pub enum VecChange<Desc> {
     Added(Desc),
     Removed(Desc),
@@ -17,16 +20,16 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
 
     type Change = Vec<VecChange<Value::Desc>>;
 
-    fn delta(&self, other: &Self) -> Option<Self::Change> {
+    fn delta(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         changes.append(
             &mut other
                 .iter()
                 .map(|v| {
                     if self.contains(v) {
-                        None
+                        Changed::Unchanged
                     } else {
-                        Some(VecChange::Added(v.describe()))
+                        Changed::Changed(VecChange::Added(v.describe()))
                     }
                 })
                 .flatten()
@@ -37,18 +40,18 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
                 .iter()
                 .map(|v| {
                     if !other.contains(v) {
-                        Some(VecChange::Removed(v.describe()))
+                        Changed::Changed(VecChange::Removed(v.describe()))
                     } else {
-                        None
+                        Changed::Unchanged
                     }
                 })
                 .flatten()
                 .collect(),
         );
         if changes.is_empty() {
-            None
+            Changed::Unchanged
         } else {
-            Some(changes)
+            Changed::Changed(changes)
         }
     }
 }

@@ -1,24 +1,21 @@
-use serde;
-
+pub mod boxes;
+pub mod empty;
 pub mod map;
 pub mod opt;
 pub mod scalar;
+pub mod set;
 pub mod types;
 pub mod vec;
 
+pub use crate::boxes::*;
 pub use crate::map::*;
 pub use crate::opt::*;
 pub use crate::scalar::*;
+pub use crate::set::*;
 pub use crate::types::*;
 pub use crate::vec::*;
 
-#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub enum EnumChange<Desc, Change> {
-    SameVariant(Change),
-    DiffVariant(Desc, Desc),
-}
-
-pub fn assert_changes<T: Delta>(left: &T, right: &T, expected: Option<<T as Delta>::Change>) {
+pub fn assert_changes<T: Delta>(left: &T, right: &T, expected: Changed<<T as Delta>::Change>) {
     pretty_assertions::assert_eq!(expected, left.delta(right))
 }
 
