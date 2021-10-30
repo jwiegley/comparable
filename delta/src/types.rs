@@ -31,6 +31,13 @@ impl<T> Changed<T> {
             Changed::Changed(x) => vec![x],
         }
     }
+
+    pub fn is_unchanged(&self) -> bool {
+        match self {
+            Changed::Unchanged => true,
+            Changed::Changed(_) => false,
+        }
+    }
 }
 
 impl<T: Default> Changed<T> {

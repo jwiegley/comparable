@@ -2,22 +2,13 @@
 
 use crate::types::{Changed, Delta, EnumChange};
 
-#[derive(
-    PartialEq,
-    Debug, // , serde::Serialize, serde::Deserialize
-)]
-pub enum OptionDesc<Desc> {
-    Some(Desc),
-    None,
-}
-
 impl<T: Delta> Delta for Option<T> {
-    type Desc = OptionDesc<T::Desc>;
+    type Desc = Option<T::Desc>;
 
     fn describe(&self) -> Self::Desc {
         match self {
-            Some(x) => OptionDesc::Some(x.describe()),
-            None => OptionDesc::None,
+            Some(x) => Some(x.describe()),
+            None => None,
         }
     }
 

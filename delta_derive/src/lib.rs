@@ -174,10 +174,11 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
         Data::Enum(en) => {
             let desc = format_ident!("{}Desc", name);
 
-            let mut desc_innards: Vec<proc_macro2::TokenStream> = Vec::new();
-            let mut match_innards: Vec<proc_macro2::TokenStream> = Vec::new();
-            let mut change_innards: Vec<proc_macro2::TokenStream> = Vec::new();
-            let mut delta_innards: Vec<proc_macro2::TokenStream> = Vec::new();
+            let mut desc_innards = Vec::<proc_macro2::TokenStream>::new();
+            let mut match_innards = Vec::<proc_macro2::TokenStream>::new();
+            let mut change_innards = Vec::<proc_macro2::TokenStream>::new();
+            let mut is_unchanged_innards = Vec::<proc_macro2::TokenStream>::new();
+            let mut delta_innards = Vec::<proc_macro2::TokenStream>::new();
 
             for variant in en.variants.iter() {
                 if has_attr(&variant.attrs, "delta_ignore").is_none() {
@@ -235,14 +236,24 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                                 #(#idents: #self_vars.describe()),*
                             }));
 
+                            is_unchanged_innards.push(quote!(
+                            #change::#vname { #(#idents: #self_vars),* } =>
+                                vec![#(#self_vars.is_unchanged()),*].into_iter().all(std::convert::identity)
+                            ));
+
                             delta_innards.push(quote!(
                             (#name::#vname { #(#idents: #self_vars),* },
-                             #name::#vname { #(#idents: #other_vars),* }) =>
-                                delta::Changed::Changed(
-                                    delta::EnumChange::SameVariant(
-                                        #change::#vname {
-                                            #(#idents: #self_vars.delta(&#other_vars)),*
-                                        }))));
+                             #name::#vname { #(#idents: #other_vars),* }) => {
+                                let change = #change::#vname {
+                                    #(#idents: #self_vars.delta(&#other_vars)),*
+                                };
+                                if change.is_unchanged() {
+                                    delta::Changed::Unchanged
+                                } else {
+                                    delta::Changed::Changed(delta::EnumChange::SameVariant(change))
+                                }
+                            }
+                            ));
                         }
                         Fields::Unnamed(unnamed) => {
                             let desc_decls: Vec<proc_macro2::TokenStream> = unnamed
@@ -287,17 +298,30 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                                 #name::#vname(#(#self_vars),*) =>
                                 #desc::#vname(#(#self_vars.describe()),*)));
 
+                            is_unchanged_innards.push(quote!(
+                                #change::#vname(#(#self_vars),*) =>
+                                vec![#(#self_vars.is_unchanged()),*].into_iter().all(std::convert::identity)
+                            ));
+
                             delta_innards.push(quote!(
                                 (#name::#vname(#(#self_vars),*),
-                                 #name::#vname(#(#other_vars),*)) =>
-                                    delta::Changed::Changed(
-                                        delta::EnumChange::SameVariant(
-                                            #change::#vname(#(#self_vars.delta(&#other_vars)),*)))));
+                                 #name::#vname(#(#other_vars),*)) => {
+                                    let change = #change::#vname(#(#self_vars.delta(&#other_vars)),*);
+                                    if change.is_unchanged() {
+                                        delta::Changed::Unchanged
+                                    } else {
+                                        delta::Changed::Changed(delta::EnumChange::SameVariant(change))
+                                    }
+                                }
+                            ));
                         }
                         Fields::Unit => {
                             desc_innards.push(quote!(#vname));
                             change_innards.push(quote!(#vname));
                             match_innards.push(quote!(#name::#vname => #desc::#vname));
+                            is_unchanged_innards.push(quote!(
+                                #change::#vname => true
+                            ));
                             delta_innards.push(
                                 quote!((#name::#vname, #name::#vname) => delta::Changed::Unchanged),
                             );
@@ -320,6 +344,14 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
                 #[derive(PartialEq, Debug)]
                 #visibility enum #change {
                     #(#change_innards),*
+                }
+
+                impl #change {
+                    #visibility fn is_unchanged(&self) -> bool {
+                        match self {
+                            #(#is_unchanged_innards),*
+                        }
+                    }
                 }
 
                 impl delta::Delta for #name {
