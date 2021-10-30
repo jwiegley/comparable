@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
 
@@ -137,6 +137,7 @@ fn test_delta_bar() {
     let y1 = Bar::default();
     x1.gamma.insert(10, true);
     x1.gamma.insert(20, false);
+
     assert_changes(
         &MyEnum::Three(x1),
         &MyEnum::Three(y1),
@@ -149,6 +150,7 @@ fn test_delta_bar() {
             ]),
         ))),
     );
+
     assert_changes(
         &MyEnum::One(true),
         &MyEnum::Two { two: vec![false] },
@@ -157,6 +159,7 @@ fn test_delta_bar() {
             MyEnumDesc::Two { two: vec![false] },
         )),
     );
+
     assert_changes(
         &MyEnum::One(true),
         &MyEnum::One(false),
@@ -164,6 +167,7 @@ fn test_delta_bar() {
             Changed::Changed(BoolChange(true, false)),
         ))),
     );
+
     assert_changes(
         &MyEnum::One(true),
         &MyEnum::Four,
@@ -172,10 +176,52 @@ fn test_delta_bar() {
             MyEnumDesc::Four,
         )),
     );
+
     let x2 = Baz::default();
     let y2 = Baz::default();
     assert_changes(&x2, &y2, Changed::Unchanged);
+
     let x3 = Quux::default();
     let y3 = Quux::default();
     assert_changes(&x3, &y3, Changed::Unchanged);
+
+    assert_changes(&100, &100, Changed::Unchanged);
+    assert_changes(&100, &200, Changed::Changed(I32Change(100, 200)));
+    assert_changes(&true, &false, Changed::Changed(BoolChange(true, false)));
+    assert_changes(
+        &"foo",
+        &"bar",
+        Changed::Changed(StringChange("foo".to_string(), "bar".to_string())),
+    );
+
+    assert_changes(&vec![100], &vec![100], Changed::Unchanged);
+    assert_changes(
+        &vec![100],
+        &vec![200],
+        Changed::Changed(vec![VecChange::Change(0, I32Change(100, 200))]),
+    );
+    assert_changes(
+        &vec![],
+        &vec![100],
+        Changed::Changed(vec![VecChange::Added(100)]),
+    );
+    assert_changes(
+        &vec![100],
+        &vec![],
+        Changed::Changed(vec![VecChange::Removed(100)]),
+    );
+    assert_changes(
+        &vec![100, 200, 300],
+        &vec![100, 400, 300],
+        Changed::Changed(vec![VecChange::Change(1, I32Change(200, 400))]),
+    );
+
+    assert_changes(
+        &HashSet::from(vec![100, 200, 300].into_iter().collect()),
+        &HashSet::from(vec![100, 400, 300].into_iter().collect()),
+        Changed::Changed(vec![SetChange::Added(400), SetChange::Removed(200)]),
+    );
+
+    let desc = Bar::default().describe();
+    println!("Bar::default().describe() = {:?}", desc);
 }
