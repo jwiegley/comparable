@@ -135,6 +135,17 @@ impl Default for Quux {
     }
 }
 
+#[derive(Delta)]
+#[describe_type(())]
+#[describe_body(())]
+struct Qalux(bool);
+
+impl Default for Qalux {
+    fn default() -> Self {
+        Qalux(true)
+    }
+}
+
 #[derive(Delta, PartialEq, Debug, Clone)]
 struct Empty;
 
@@ -242,4 +253,10 @@ fn test_delta_bar() {
 
     let desc = Bar::default().describe();
     println!("Bar::default().describe() = {:?}", desc);
+
+    assert_changes(
+        &Qalux(true),
+        &Qalux(false),
+        Changed::Changed(QaluxChange(BoolChange(true, false))),
+    );
 }

@@ -130,6 +130,30 @@ fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
             #delta_impl
         };
         gen.into()
+    } else if name_and_types.len() == 1 {
+        let FieldInfo {
+            name: field_name,
+            pascal_case: _,
+            ty,
+        } = &name_and_types[0];
+        let ch = change_type(ty);
+        let change_innards = vec![quote!(#ch)];
+        let change_struct = definition(visibility, quote!(struct), change_name, change_innards);
+        let delta_impl = define_delta_impl(
+            name,
+            desc_type,
+            desc_body,
+            &quote!(#change_name),
+            &quote! {
+                self.#field_name.delta(&other.#field_name).map(#change_name)
+            },
+        );
+
+        let gen = quote! {
+            #change_struct
+            #delta_impl
+        };
+        gen.into()
     } else {
         let (change_innards, delta_innards):
             (Vec<proc_macro2::TokenStream>, Vec<proc_macro2::TokenStream>) =
@@ -205,7 +229,7 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
             // Delta for the generated struct.
 
             let inner_change_name = format_ident!("{}{}Change", name, vname);
-            let fields_struct = define_unnamed_struct_for_variant(
+            let _fields_struct = define_unnamed_struct_for_variant(
                 visibility,
                 &inner_change_name,
                 // jww (2021-10-30): Transfer the type here into <T as Delta>::Change
@@ -451,6 +475,13 @@ fn definition(
             // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
             #[derive(PartialEq, Debug)]
             #visibility #keyword #name;
+        }
+    } else if body.len() == 1 {
+        let singleton = &body[0];
+        quote! {
+            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(PartialEq, Debug)]
+            #visibility #keyword #name(#singleton);
         }
     } else {
         quote! {
