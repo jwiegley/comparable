@@ -1,6 +1,6 @@
 [package]
 name = "delta_test"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["John Wiegley"]
 edition = "2018"
 
@@ -10,4 +10,4 @@ path = "src/sample.rs"
 
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
-delta = { version = "0.0", features = ["derive"], path = "../delta" }
+delta = { version = "0.1", features = ["derive"], path = "../delta" }

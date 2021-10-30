@@ -1,23 +1,19 @@
 [package]
 name = "delta"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["John Wiegley"]
 edition = "2018"
 
 [lib]
 path = "src/lib.rs"
 
-[[test]]
-name = "sample-test"
-path = "tests/sample.rs"
-
 [dependencies]
 pretty_assertions = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-delta_derive = { version = "0.0", optional = true, path = "../delta_derive" }
+delta_derive = { version = "0.1", optional = true, path = "../delta_derive" }
 
 [dev-dependencies]
-delta_derive = { version = "0.0", path = "../delta_derive" }
+delta_derive = { version = "0.1", path = "../delta_derive" }
 
 [package.metadata.playground]
 features = ["derive"]

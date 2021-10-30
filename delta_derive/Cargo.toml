@@ -1,6 +1,6 @@
 [package]
 name = "delta_derive"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["John Wiegley"]
 edition = "2018"
 
