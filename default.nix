@@ -18,11 +18,13 @@ with pkgs; rustPlatform.buildRustPackage rec {
 
   cargoBuildFlags = [];
 
-  nativeBuildInputs = [ rls rustfmt clippy pkg-config ];
+  nativeBuildInputs = [ rls rustfmt clippy pkg-config cargo-expand ];
   buildInputs = [ openssl protobuf ]
     ++ (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security);
 
   registry = "file://local-registry";
+
+  RUSTC_BOOTSTRAP = 1;
 
   meta = with lib; {
     description = "Differencing data structures to improve testing";
