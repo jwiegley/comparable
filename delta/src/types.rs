@@ -24,6 +24,13 @@ impl<T> Changed<T> {
             Changed::Changed(x) => Some(x),
         }
     }
+
+    pub fn to_changes(&mut self) -> Vec<T> {
+        match std::mem::take(self) {
+            Changed::Unchanged => vec![],
+            Changed::Changed(x) => vec![x],
+        }
+    }
 }
 
 impl<T: Default> Changed<T> {

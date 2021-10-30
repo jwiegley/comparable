@@ -9,6 +9,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Index};
     attributes(
         describe_type,
         describe_body,
+        no_description,
         compare_default,
         public_change,
         private_change,
@@ -43,12 +44,16 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
         input.vis
     };
     let change = format_ident!("{}Change", name);
-    let describe_type = if compare_default {
-        quote!(Vec<#change>)
+    let describe_type = if has_attr(&input.attrs, "no_description").is_some() {
+        quote!(())
+    } else if compare_default {
+        quote!(Self::Change)
     } else {
         quote!(Self)
     };
-    let describe_body = if compare_default {
+    let describe_body = if has_attr(&input.attrs, "no_description").is_some() {
+        quote!(())
+    } else if compare_default {
         quote!(#name::default().delta(self).unwrap_or_default())
     } else {
         quote!((*self).clone())
@@ -106,8 +111,9 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 
             for (name, capitalized, typename) in field_names_and_types.iter() {
                 change_innards.push(quote!(#capitalized(<#typename as delta::Delta>::Change)));
-                delta_innards
-                    .push(quote!(self.#name.delta(&other.#name).map(#change::#capitalized)));
+                delta_innards.push(
+                    quote!(self.#name.delta(&other.#name).map(#change::#capitalized).to_changes()),
+                );
             }
 
             let gen = if change_innards.is_empty() {
