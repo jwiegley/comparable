@@ -204,17 +204,13 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
             // that variant is Bar(<FooBar as Delta>::Change), after deriving
             // Delta for the generated struct.
 
-            // let inner_struct = create_data_struct(&variant.fields);
-            // let inner_name = format_ident!("{}{}", name, vname);
-            // let fields_struct =
-            //     define_unnamed_struct_for_variant(visibility, &inner_name, &variant.fields);
-            // let inner_delta_impl = process_struct(
-            //     &Attributes {
-            //         name: inner_name,
-            //         ..attrs.clone()
-            //     },
-            //     &inner_struct,
-            // );
+            let inner_change_name = format_ident!("{}{}Change", name, vname);
+            let fields_struct = define_unnamed_struct_for_variant(
+                visibility,
+                &inner_change_name,
+                // jww (2021-10-30): Transfer the type here into <T as Delta>::Change
+                &map_field_types(&variant.fields, |ty| ty.clone()),
+            );
 
             match &variant.fields {
                 Fields::Named(named) => {
@@ -468,7 +464,49 @@ fn definition(
     gen.into()
 }
 
-fn create_data_struct(fields: &syn::Fields) -> syn::DataStruct {
+fn map_field_types(fields: &syn::Fields, f: impl Fn(&syn::Type) -> syn::Type) -> syn::Fields {
+    match fields {
+        syn::Fields::Named(named) => syn::Fields::Named(syn::FieldsNamed {
+            brace_token: named.brace_token,
+            named: named
+                .named
+                .iter()
+                .map(|field| {
+                    if has_attr(&field.attrs, "delta_ignore").is_none() {
+                        Some(syn::Field {
+                            ty: f(&field.ty),
+                            ..field.clone()
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .collect(),
+        }),
+        syn::Fields::Unnamed(unnamed) => syn::Fields::Unnamed(syn::FieldsUnnamed {
+            paren_token: unnamed.paren_token,
+            unnamed: unnamed
+                .unnamed
+                .iter()
+                .map(|field| {
+                    if has_attr(&field.attrs, "delta_ignore").is_none() {
+                        Some(syn::Field {
+                            ty: f(&field.ty),
+                            ..field.clone()
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .collect(),
+        }),
+        syn::Fields::Unit => syn::Fields::Unit,
+    }
+}
+
+fn _create_data_struct(fields: &syn::Fields) -> syn::DataStruct {
     syn::DataStruct {
         struct_token: syn::token::Struct {
             span: Span::call_site(),

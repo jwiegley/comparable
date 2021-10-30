@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
@@ -73,6 +74,23 @@ impl Default for MyEnum {
     fn default() -> Self {
         MyEnum::Four
     }
+}
+
+struct MyEnumOneChange(<bool as Delta>::Change);
+
+struct MyEnumTwoChange {
+    two: <Vec<bool> as Delta>::Change,
+}
+
+struct MyEnumThreeChange(<Bar as Delta>::Change);
+
+struct MyEnumFourChange;
+
+enum MyEnumChange_ {
+    One(MyEnumOneChange),
+    Two(MyEnumTwoChange),
+    Three(MyEnumThreeChange),
+    Four(MyEnumFourChange),
 }
 
 #[derive(Delta)]
