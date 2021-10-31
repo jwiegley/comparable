@@ -3,9 +3,7 @@ use crate::types::{Changed, Delta};
 impl<T> Delta for std::iter::Empty<T> {
     type Desc = ();
 
-    fn describe(&self) -> Self::Desc {
-        ()
-    }
+    fn describe(&self) -> Self::Desc {}
 
     type Change = ();
 

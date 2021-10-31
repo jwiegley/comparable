@@ -57,16 +57,6 @@ impl<T> Default for Changed<T> {
     }
 }
 
-impl<T> Into<Option<T>> for Changed<T> {
-    #[inline]
-    fn into(self) -> Option<T> {
-        match self {
-            Changed::Unchanged => None,
-            Changed::Changed(x) => Some(x),
-        }
-    }
-}
-
 impl<T> From<Option<T>> for Changed<T> {
     #[inline]
     fn from(opt: Option<T>) -> Self {

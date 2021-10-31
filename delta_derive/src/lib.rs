@@ -4,7 +4,7 @@ use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Index};
 
-fn has_attr(attrs: &Vec<syn::Attribute>, attr_name: &str) -> Option<syn::Attribute> {
+fn has_attr(attrs: &[syn::Attribute], attr_name: &str) -> Option<syn::Attribute> {
     attrs
         .iter()
         .filter(|attr| attr.path.is_ident(attr_name))
@@ -98,7 +98,7 @@ fn gather_attrs(input: &DeriveInput) -> Attributes {
     };
 
     Attributes {
-        visibility: visibility.clone(),
+        visibility,
         name: name.clone(),
         desc_type: describe_type,
         desc_body: describe_body,
@@ -198,6 +198,7 @@ fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
     }
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
     let Attributes {
         visibility,
@@ -470,7 +471,7 @@ fn definition(
     name: &syn::Ident,
     body: Vec<proc_macro2::TokenStream>,
 ) -> proc_macro2::TokenStream {
-    let gen = if body.is_empty() {
+    if body.is_empty() {
         quote! {
             // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
             #[derive(PartialEq, Debug)]
@@ -491,8 +492,7 @@ fn definition(
                 #(#body),*
             }
         }
-    };
-    gen.into()
+    }
 }
 
 fn map_field_types(fields: &syn::Fields, f: impl Fn(&syn::Type) -> syn::Type) -> syn::Fields {
@@ -585,7 +585,7 @@ fn define_delta_impl(
     change_type: &proc_macro2::TokenStream,
     change_body: &proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let gen = quote! {
+    quote! {
         impl delta::Delta for #name {
             type Desc = #describe_type;
 
@@ -599,8 +599,7 @@ fn define_delta_impl(
                 #change_body
             }
         }
-    };
-    gen.into()
+    }
 }
 
 fn desc_type(ty: &syn::Type) -> proc_macro2::TokenStream {

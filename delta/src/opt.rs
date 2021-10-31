@@ -6,10 +6,7 @@ impl<T: Delta> Delta for Option<T> {
     type Desc = Option<T::Desc>;
 
     fn describe(&self) -> Self::Desc {
-        match self {
-            Some(x) => Some(x.describe()),
-            None => None,
-        }
+        self.as_ref().map(|x| x.describe())
     }
 
     type Change = EnumChange<Self::Desc, T::Change>;

@@ -1,3 +1,6 @@
+#![allow(clippy::useless_conversion)]
+#![allow(clippy::unnecessary_cast)]
+
 use std::collections::{BTreeSet, HashSet};
 
 use delta::{assert_changes, Changed, I32Change, SetChange, VecChange};

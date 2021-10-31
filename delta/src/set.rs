@@ -34,6 +34,7 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
             }
         }
         if other.len() > self.len() {
+            #[allow(clippy::needless_range_loop)]
             for i in self.len()..other.len() {
                 changes.push(VecChange::Added(i, other[i].describe()));
             }

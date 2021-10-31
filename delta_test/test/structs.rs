@@ -1,3 +1,6 @@
+#![allow(clippy::useless_conversion)]
+#![allow(clippy::unnecessary_cast)]
+
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
