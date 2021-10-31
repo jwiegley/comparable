@@ -10,7 +10,7 @@ use crate::types::{Changed, Delta};
 )]
 pub enum VecChange<Desc, Change> {
     Added(usize, Desc),
-    Change(usize, Change),
+    Changed(usize, Change),
     Removed(usize, Desc),
 }
 
@@ -30,7 +30,7 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
             if i >= other_len {
                 changes.push(VecChange::Removed(i, self[i].describe()));
             } else if let Changed::Changed(change) = self[i].delta(&other[i]) {
-                changes.push(VecChange::Change(i, change));
+                changes.push(VecChange::Changed(i, change));
             }
         }
         if other.len() > self.len() {

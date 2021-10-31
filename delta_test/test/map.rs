@@ -1,87 +1,107 @@
-// use serde;
 use std::collections::{BTreeMap, HashMap};
-use std::fmt::Debug;
 
-use crate::types::{Changed, Delta};
+use delta::{assert_changes, Changed, I32Change, MapChange};
 
-#[derive(
-    PartialEq,
-    Debug, // , serde::Serialize, serde::Deserialize
-)]
-pub enum MapChange<Key, Desc, Change> {
-    Added(Key, Desc),
-    Changed(Key, Change),
-    Removed(Key),
+#[test]
+fn test_hashmap() {
+    assert_changes(
+        &HashMap::<i32, i32>::new(),
+        &HashMap::<i32, i32>::new(),
+        Changed::Unchanged,
+    );
+    assert_changes(
+        &HashMap::new(),
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![
+            MapChange::Added(0, 1),
+            MapChange::Added(1, 2),
+            MapChange::Added(2, 3),
+        ]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &HashMap::new(),
+        Changed::Changed(vec![
+            MapChange::Removed(0),
+            MapChange::Removed(1),
+            MapChange::Removed(2),
+        ]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Added(2, 3)]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Removed(2)]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Added(1, 2)]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Removed(1)]),
+    );
+    assert_changes(
+        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &HashMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
+    );
 }
 
-impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
-    type Desc = BTreeMap<Key, Value::Desc>;
-
-    fn describe(&self) -> Self::Desc {
-        self.iter()
-            .map(|(k, v)| (k.clone(), v.describe()))
-            .collect()
-    }
-
-    type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
-
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
-        let mut changes = Vec::new();
-        changes.append(
-            &mut other
-                .iter()
-                .map(|(k, v)| {
-                    if let Some(vo) = self.get(k) {
-                        vo.delta(v)
-                            .map(|changes| MapChange::Changed(k.clone(), changes))
-                    } else {
-                        Changed::Changed(MapChange::Added(k.clone(), v.describe()))
-                    }
-                })
-                .flatten()
-                .collect(),
-        );
-        changes.append(
-            &mut self
-                .iter()
-                .map(|(k, _v)| {
-                    if !other.contains_key(k) {
-                        Changed::Changed(MapChange::Removed(k.clone()))
-                    } else {
-                        Changed::Unchanged
-                    }
-                })
-                .flatten()
-                .collect(),
-        );
-        if changes.is_empty() {
-            Changed::Unchanged
-        } else {
-            Changed::Changed(changes)
-        }
-    }
-}
-
-fn to_btreemap<K: Clone + Ord, V>(map: &HashMap<K, V>) -> BTreeMap<K, &V> {
-    map.iter()
-        .map(|(k, v)| (k.clone(), v))
-        .collect::<BTreeMap<K, &V>>()
-        .into_iter()
-        .collect()
-}
-
-impl<Key: Ord + Clone + Debug, Value: Delta> Delta for HashMap<Key, Value> {
-    type Desc = BTreeMap<Key, Value::Desc>;
-
-    fn describe(&self) -> Self::Desc {
-        self.iter()
-            .map(|(k, v)| (k.clone(), v.describe()))
-            .collect()
-    }
-
-    type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
-
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
-        to_btreemap(self).delta(&to_btreemap(other))
-    }
+#[test]
+fn test_btreemap() {
+    assert_changes(
+        &BTreeMap::<i32, i32>::new(),
+        &BTreeMap::<i32, i32>::new(),
+        Changed::Unchanged,
+    );
+    assert_changes(
+        &BTreeMap::new(),
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![
+            MapChange::Added(0, 1),
+            MapChange::Added(1, 2),
+            MapChange::Added(2, 3),
+        ]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &BTreeMap::new(),
+        Changed::Changed(vec![
+            MapChange::Removed(0),
+            MapChange::Removed(1),
+            MapChange::Removed(2),
+        ]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Added(2, 3)]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Removed(2)]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Added(1, 2)]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &BTreeMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Removed(1)]),
+    );
+    assert_changes(
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &BTreeMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
+        Changed::Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
+    );
 }

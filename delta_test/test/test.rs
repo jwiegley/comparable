@@ -2,8 +2,8 @@
 
 mod boxes;
 mod empty;
-// mod map;
 mod enums;
+mod map;
 mod opt;
 mod scalar;
 mod set;

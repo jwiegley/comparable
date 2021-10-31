@@ -226,7 +226,7 @@ fn test_delta_bar() {
     assert_changes(
         &vec![100],
         &vec![200],
-        Changed::Changed(vec![VecChange::Change(0, I32Change(100, 200))]),
+        Changed::Changed(vec![VecChange::Changed(0, I32Change(100, 200))]),
     );
     assert_changes(
         &vec![],
@@ -241,7 +241,7 @@ fn test_delta_bar() {
     assert_changes(
         &vec![100, 200, 300],
         &vec![100, 400, 300],
-        Changed::Changed(vec![VecChange::Change(1, I32Change(200, 400))]),
+        Changed::Changed(vec![VecChange::Changed(1, I32Change(200, 400))]),
     );
 
     assert_changes(
