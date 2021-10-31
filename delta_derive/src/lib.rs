@@ -16,11 +16,14 @@ fn has_attr(attrs: &[syn::Attribute], attr_name: &str) -> Option<syn::Attribute>
 #[derive(Clone)]
 struct Attributes {
     visibility: syn::Visibility,
-    name: syn::Ident,
+    type_name: syn::Ident,
+    desc_name: syn::Ident,
     desc_type: proc_macro2::TokenStream,
     desc_body: proc_macro2::TokenStream,
     change_name: syn::Ident,
 }
+
+struct Generated {}
 
 // jww (2021-10-30): Allow the Desc and Change suffixes to be configurable.
 
@@ -53,7 +56,8 @@ fn impl_delta(input: DeriveInput) -> TokenStream {
 }
 
 fn gather_attrs(input: &DeriveInput) -> Attributes {
-    let name = &input.ident;
+    let type_name = input.ident.clone();
+    let desc_name = format_ident!("{}Desc", type_name);
 
     let visibility = if has_attr(&input.attrs, "delta_private").is_some() {
         syn::Visibility::Inherited
@@ -69,7 +73,7 @@ fn gather_attrs(input: &DeriveInput) -> Attributes {
 
     let compare_default = has_attr(&input.attrs, "compare_default").is_some();
 
-    let describe_type = if has_attr(&input.attrs, "no_description").is_some() {
+    let desc_type = if has_attr(&input.attrs, "no_description").is_some() {
         quote!(())
     } else if let Some(ty) = has_attr(&input.attrs, "describe_type").map(|x| {
         x.parse_args::<syn::Type>()
@@ -83,7 +87,7 @@ fn gather_attrs(input: &DeriveInput) -> Attributes {
         quote!(Self)
     };
 
-    let describe_body = if has_attr(&input.attrs, "no_description").is_some() {
+    let desc_body = if has_attr(&input.attrs, "no_description").is_some() {
         quote!(())
     } else if let Some(body) = has_attr(&input.attrs, "describe_body").map(|x| {
         x.parse_args::<syn::Expr>()
@@ -92,34 +96,35 @@ fn gather_attrs(input: &DeriveInput) -> Attributes {
     }) {
         body
     } else if compare_default {
-        quote!(#name::default().delta(self).unwrap_or_default())
+        quote!(#type_name::default().delta(self).unwrap_or_default())
     } else {
         quote!((*self).clone())
     };
 
     Attributes {
         visibility,
-        name: name.clone(),
-        desc_type: describe_type,
-        desc_body: describe_body,
-        change_name: format_ident!("{}Change", name),
+        type_name: type_name.clone(),
+        desc_name,
+        desc_type,
+        desc_body,
+        change_name: format_ident!("{}Change", type_name),
     }
 }
 
 fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
     let Attributes {
         visibility,
-        name,
+        type_name,
+        desc_name: _,
         desc_type,
         desc_body,
         change_name,
     } = attrs;
 
     let name_and_types = field_names_and_types(&st.fields);
-
     if name_and_types.is_empty() {
         let delta_impl = define_delta_impl(
-            name,
+            type_name,
             desc_type,
             desc_body,
             &quote!(()),
@@ -138,9 +143,15 @@ fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
         } = &name_and_types[0];
         let ch = change_type(ty);
         let change_innards = vec![quote!(#ch)];
-        let change_struct = definition(visibility, quote!(struct), change_name, change_innards);
+        let change_struct = definition(
+            visibility,
+            quote!(struct),
+            change_name,
+            false,
+            change_innards,
+        );
         let delta_impl = define_delta_impl(
-            name,
+            type_name,
             desc_type,
             desc_body,
             &quote!(#change_name),
@@ -155,23 +166,20 @@ fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
         };
         gen.into()
     } else {
-        let (change_innards, delta_innards):
-            (Vec<proc_macro2::TokenStream>, Vec<proc_macro2::TokenStream>) =
+        let change_struct = define_enum_from_fields(visibility, change_name, &st.fields);
+
+        let delta_innards: Vec<proc_macro2::TokenStream> =
             name_and_types.iter().map(
                 |FieldInfo {
                    name,
                    pascal_case,
-                   ty,
+                   ty: _,
                 }|
                 {
-                    let ch = change_type(ty);
-                    (quote!(#pascal_case(#ch)),
-                     quote!(self.#name.delta(&other.#name).map(#change_name::#pascal_case).to_changes()))
-                }).unzip();
-
-        let change_struct = definition(visibility, quote!(enum), change_name, change_innards);
+                    quote!(self.#name.delta(&other.#name).map(#change_name::#pascal_case).to_changes())
+                }).collect();
         let delta_impl = define_delta_impl(
-            name,
+            type_name,
             desc_type,
             desc_body,
             &quote!(Vec<#change_name>),
@@ -202,12 +210,12 @@ fn process_struct(attrs: &Attributes, st: &syn::DataStruct) -> TokenStream {
 fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
     let Attributes {
         visibility,
-        name,
+        type_name,
+        desc_name,
         desc_type: _,
         desc_body: _,
         change_name,
     } = attrs;
-    let desc_name = format_ident!("{}Desc", name);
 
     let mut desc_innards = Vec::<proc_macro2::TokenStream>::new();
     let mut match_innards = Vec::<proc_macro2::TokenStream>::new();
@@ -229,12 +237,12 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
             // that variant is Bar(<FooBar as Delta>::Change), after deriving
             // Delta for the generated struct.
 
-            let inner_change_name = format_ident!("{}{}Change", name, vname);
-            let _fields_struct = define_unnamed_struct_for_variant(
+            let _fields_change_struct = create_mirror_struct(
                 visibility,
-                &inner_change_name,
-                // jww (2021-10-30): Transfer the type here into <T as Delta>::Change
-                &map_field_types(&variant.fields, |ty| ty.clone()),
+                &format_ident!("{}{}", type_name, vname),
+                &"Change",
+                &variant.fields,
+                false,
             );
 
             match &variant.fields {
@@ -282,7 +290,7 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                     let other_vars = vars("other");
 
                     match_innards.push(quote! {
-                        #name::#vname { #(#idents: #self_vars),* } =>
+                        #type_name::#vname { #(#idents: #self_vars),* } =>
                             #desc_name::#vname {
                                 #(#idents: #self_vars.describe()),*
                             }
@@ -294,8 +302,8 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                     });
 
                     delta_innards.push(quote! {
-                        (#name::#vname { #(#idents: #self_vars),* },
-                         #name::#vname { #(#idents: #other_vars),* }) => {
+                        (#type_name::#vname { #(#idents: #self_vars),* },
+                         #type_name::#vname { #(#idents: #other_vars),* }) => {
                             let change = #change_name::#vname {
                                 #(#idents: #self_vars.delta(&#other_vars)),*
                             };
@@ -347,7 +355,7 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                     let other_vars = vars("other");
 
                     match_innards.push(quote! {
-                        #name::#vname(#(#self_vars),*) =>
+                        #type_name::#vname(#(#self_vars),*) =>
                             #desc_name::#vname(#(#self_vars.describe()),*)
                     });
 
@@ -357,8 +365,8 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                     });
 
                     delta_innards.push(quote! {
-                        (#name::#vname(#(#self_vars),*),
-                         #name::#vname(#(#other_vars),*)) => {
+                        (#type_name::#vname(#(#self_vars),*),
+                         #type_name::#vname(#(#other_vars),*)) => {
                             let change = #change_name::#vname(#(#self_vars.delta(&#other_vars)),*);
                             if change.is_unchanged() {
                                 delta::Changed::Unchanged
@@ -371,12 +379,13 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                 Fields::Unit => {
                     desc_innards.push(quote!(#vname));
                     change_innards.push(quote!(#vname));
-                    match_innards.push(quote!(#name::#vname => #desc_name::#vname));
+                    match_innards.push(quote!(#type_name::#vname => #desc_name::#vname));
                     is_unchanged_innards.push(quote!(
                         #change_name::#vname => true
                     ));
-                    delta_innards
-                        .push(quote!((#name::#vname, #name::#vname) => delta::Changed::Unchanged));
+                    delta_innards.push(
+                        quote!((#type_name::#vname, #type_name::#vname) => delta::Changed::Unchanged),
+                    );
                 }
             }
         }
@@ -388,11 +397,11 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                 self.describe(), other.describe()))
     });
 
-    let desc_struct = definition(visibility, quote!(enum), &desc_name, desc_innards);
-    let change_struct = definition(visibility, quote!(enum), change_name, change_innards);
+    let desc_struct = definition(visibility, quote!(enum), desc_name, false, desc_innards);
+    let change_struct = definition(visibility, quote!(enum), change_name, false, change_innards);
 
     let delta_impl = define_delta_impl(
-        name,
+        type_name,
         &quote!(#desc_name),
         &quote! {
             match self {
@@ -465,36 +474,6 @@ fn field_names_and_types(fields: &syn::Fields) -> Vec<FieldInfo> {
     result
 }
 
-fn definition(
-    visibility: &syn::Visibility,
-    keyword: proc_macro2::TokenStream,
-    name: &syn::Ident,
-    body: Vec<proc_macro2::TokenStream>,
-) -> proc_macro2::TokenStream {
-    if body.is_empty() {
-        quote! {
-            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-            #[derive(PartialEq, Debug)]
-            #visibility #keyword #name;
-        }
-    } else if body.len() == 1 {
-        let singleton = &body[0];
-        quote! {
-            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-            #[derive(PartialEq, Debug)]
-            #visibility #keyword #name(#singleton);
-        }
-    } else {
-        quote! {
-            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-            #[derive(PartialEq, Debug)]
-            #visibility #keyword #name {
-                #(#body),*
-            }
-        }
-    }
-}
-
 fn map_field_types(fields: &syn::Fields, f: impl Fn(&syn::Type) -> syn::Type) -> syn::Fields {
     match fields {
         syn::Fields::Named(named) => syn::Fields::Named(syn::FieldsNamed {
@@ -547,10 +526,57 @@ fn _create_data_struct(fields: &syn::Fields) -> syn::DataStruct {
     }
 }
 
-fn define_unnamed_struct_for_variant(
+/// A mirror struct copies the exact fields of another structure (unless it
+/// had unnamed fields, and `use_unnamed_fields` is false, in which case all
+/// the unnamed fields will be given names of field0, field1, etc.). During
+/// the copy, however, the types are substituted by an associated type of the
+/// `Delta` trait.
+fn create_mirror_struct(
+    visibility: &syn::Visibility,
+    type_name: &syn::Ident,
+    suffix: &str,
+    fields: &syn::Fields,
+    use_unnamed_fields: bool,
+) -> proc_macro2::TokenStream {
+    define_struct_from_fields(
+        visibility,
+        &format_ident!("{}{}", type_name, suffix),
+        #[allow(unused_variables)] // compiler doesn't see the use of ty
+        &map_field_types(&fields, |ty: &syn::Type| -> syn::Type {
+            let suffix_ident = format_ident!("{}", suffix);
+            syn::parse2(quote!(<#ty as delta::Delta>::#suffix_ident))
+                .expect(&format!("Failed to parse associated type for {}", suffix))
+        }),
+        use_unnamed_fields,
+    )
+}
+
+fn define_enum_from_fields(
     visibility: &syn::Visibility,
     name: &syn::Ident,
     fields: &syn::Fields,
+) -> proc_macro2::TokenStream {
+    let change_innards: Vec<proc_macro2::TokenStream> = field_names_and_types(fields)
+        .iter()
+        .map(
+            |FieldInfo {
+                 name: _,
+                 pascal_case,
+                 ty,
+             }| {
+                let ch = change_type(ty);
+                quote!(#pascal_case(#ch))
+            },
+        )
+        .collect();
+    definition(visibility, quote!(enum), name, false, change_innards)
+}
+
+fn define_struct_from_fields(
+    visibility: &syn::Visibility,
+    name: &syn::Ident,
+    fields: &syn::Fields,
+    use_unnamed_fields: bool,
 ) -> proc_macro2::TokenStream {
     let mut struct_fields = Vec::<proc_macro2::TokenStream>::new();
     match &fields {
@@ -566,16 +592,63 @@ fn define_unnamed_struct_for_variant(
         Fields::Unnamed(unnamed) => {
             for (field, index) in unnamed.unnamed.iter().zip(0usize..) {
                 if has_attr(&field.attrs, "delta_ignore").is_none() {
-                    let field_name: syn::Ident =
-                        Ident::new(&format!("field{}", index), Span::call_site());
                     let ty = &field.ty;
-                    struct_fields.push(quote!(#field_name: #ty));
+                    if use_unnamed_fields {
+                        struct_fields.push(quote!(#ty));
+                    } else {
+                        let field_name: syn::Ident =
+                            Ident::new(&format!("field{}", index), Span::call_site());
+                        struct_fields.push(quote!(#field_name: #ty));
+                    }
                 }
             }
         }
         Fields::Unit => {}
     }
-    definition(visibility, quote!(struct), name, struct_fields)
+    definition(
+        visibility,
+        quote!(struct),
+        name,
+        use_unnamed_fields,
+        struct_fields,
+    )
+}
+
+fn definition(
+    visibility: &syn::Visibility,
+    keyword: proc_macro2::TokenStream,
+    name: &syn::Ident,
+    use_unnamed_fields: bool,
+    body: Vec<proc_macro2::TokenStream>,
+) -> proc_macro2::TokenStream {
+    if body.is_empty() {
+        quote! {
+            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(PartialEq, Debug)]
+            #visibility #keyword #name;
+        }
+    } else if body.len() == 1 {
+        let singleton = &body[0];
+        quote! {
+            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(PartialEq, Debug)]
+            #visibility #keyword #name(#singleton);
+        }
+    } else if use_unnamed_fields {
+        quote! {
+            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(PartialEq, Debug)]
+            #visibility #keyword #name(#(#body),*);
+        }
+    } else {
+        quote! {
+            // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+            #[derive(PartialEq, Debug)]
+            #visibility #keyword #name {
+                #(#body),*
+            }
+        }
+    }
 }
 
 fn define_delta_impl(

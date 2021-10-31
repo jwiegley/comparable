@@ -5,6 +5,69 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
 
+#[test]
+fn test_unit_struct() {
+    // jww (2021-10-31): Should only need to derive Delta here
+    #[derive(Delta, Clone, Debug, PartialEq)]
+    struct Unit;
+
+    assert_changes(&Unit, &Unit, Changed::Unchanged);
+}
+
+#[test]
+fn test_unnamed_singleton_struct_unit_field() {}
+
+#[test]
+fn test_unnamed_singleton_struct_scalar_field() {}
+
+#[test]
+fn test_unnamed_singleton_struct_vec_field() {}
+
+#[test]
+fn test_unnamed_singleton_struct_struct_field() {}
+
+#[test]
+fn test_named_singleton_struct_unit_field() {}
+
+#[test]
+fn test_named_singleton_struct_scalar_field() {}
+
+#[test]
+fn test_named_singleton_struct_vec_field() {}
+
+#[test]
+fn test_named_singleton_struct_struct_field() {}
+
+#[test]
+fn test_unnamed_struct_unit_fields() {}
+
+#[test]
+fn test_unnamed_struct_scalar_fields() {}
+
+#[test]
+fn test_unnamed_struct_vec_fields() {}
+
+#[test]
+fn test_unnamed_struct_struct_fields() {}
+
+#[test]
+fn test_unnamed_struct_mixed_fields() {}
+
+#[test]
+fn test_named_struct_unit_fields() {}
+
+#[test]
+fn test_named_struct_scalar_fields() {}
+
+#[test]
+fn test_named_struct_vec_fields() {}
+
+#[test]
+fn test_named_struct_struct_fields() {}
+
+#[test]
+fn test_named_struct_mixed_fields() {}
+
 // This 'Foo' is provided to show what #[derive(Delta)] will expand into when
 // applied to the 'Bar' type below.
 
