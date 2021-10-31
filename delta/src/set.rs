@@ -9,9 +9,9 @@ use crate::types::{Changed, Delta};
     Debug, // , serde::Serialize, serde::Deserialize
 )]
 pub enum VecChange<Desc, Change> {
-    Added(Desc),
+    Added(usize, Desc),
     Change(usize, Change),
-    Removed(Desc),
+    Removed(usize, Desc),
 }
 
 impl<Value: PartialEq + Delta> Delta for Vec<Value> {
@@ -28,14 +28,14 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
         let other_len = other.len();
         for i in 0..self.len() {
             if i >= other_len {
-                changes.push(VecChange::Removed(self[i].describe()));
+                changes.push(VecChange::Removed(i, self[i].describe()));
             } else if let Changed::Changed(change) = self[i].delta(&other[i]) {
                 changes.push(VecChange::Change(i, change));
             }
         }
         if other.len() > self.len() {
             for i in self.len()..other.len() {
-                changes.push(VecChange::Added(other[i].describe()));
+                changes.push(VecChange::Added(i, other[i].describe()));
             }
         }
         if changes.is_empty() {

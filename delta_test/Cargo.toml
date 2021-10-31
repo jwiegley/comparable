@@ -6,7 +6,7 @@ edition = "2018"
 
 [[test]]
 name = "sample-test"
-path = "src/sample.rs"
+path = "test/test.rs"
 
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }

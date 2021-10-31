@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
@@ -232,12 +231,12 @@ fn test_delta_bar() {
     assert_changes(
         &vec![],
         &vec![100],
-        Changed::Changed(vec![VecChange::Added(100)]),
+        Changed::Changed(vec![VecChange::Added(0, 100)]),
     );
     assert_changes(
         &vec![100],
         &vec![],
-        Changed::Changed(vec![VecChange::Removed(100)]),
+        Changed::Changed(vec![VecChange::Removed(0, 100)]),
     );
     assert_changes(
         &vec![100, 200, 300],
