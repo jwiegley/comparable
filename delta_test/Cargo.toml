@@ -3,6 +3,16 @@ name = "delta_test"
 version = "0.1.0"
 authors = ["John Wiegley"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "A library for comparing data structures in Rust, oriented toward testing"
+homepage = "https://github.com/jwiegley/delta"
+repository = "https://github.com/jwiegley/delta"
+documentation = "https://github.com/jwiegley/delta"
+keywords = ["delta", "testing"]
+categories = ["testing"]
+readme = "README.md"
+include = ["src/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
+build = "build.rs"
 
 [[test]]
 name = "sample-test"
