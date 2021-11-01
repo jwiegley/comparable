@@ -281,6 +281,10 @@ be compared for differences.
 **TODO**: jww (2021-11-01): Allow the `Desc` and `Change` suffixes to both be
 changed.
 
+**TODO**: jww (2021-11-01): For each multi-field variant in an enum, generate
+a helper `Change` struct and set that variant's type for the enum's `Change`
+to be `Vec<Change>`.
+
 **TODO**: jww (2021-11-01): Provide an attribute macro `#[delta_wrap]` that
 defines a wrapping type that can be used for comparison. When the field is
 encountered during `delta`, construct a temporary value using the wrapper and
