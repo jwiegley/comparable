@@ -187,7 +187,7 @@ impl Definition {
                     }
                 }
                 syn::Fields::Unit => {
-                    quote! {}
+                    quote! { #desc_name }
                 }
             },
             syn::Data::Enum(en) => {
@@ -229,9 +229,13 @@ impl Definition {
                         }
                     }
                 });
-                quote! {
-                    match self {
-                        #(#cases),*
+                if cases.is_empty() {
+                    quote!(panic!("Cannot construct empty enum"))
+                } else {
+                    quote! {
+                        match self {
+                            #(#cases),*
+                        }
                     }
                 }
             }
@@ -317,10 +321,20 @@ impl Definition {
                     } else {
                         Some(syn::Variant {
                             ident: format_ident!("Both{}", &variant.ident),
-                            fields: map_on_fields(&variant.fields, |_, field| syn::Field {
-                                ty: Self::changed_type(&Self::assoc_type(&field.ty, "Change")),
-                                ..field.clone()
-                            }),
+                            fields: {
+                                let many_fields = variant.fields.len() > 1;
+                                map_on_fields(&variant.fields, |_, field| syn::Field {
+                                    ty: {
+                                        let change_type = Self::assoc_type(&field.ty, "Change");
+                                        if many_fields {
+                                            Self::changed_type(&change_type)
+                                        } else {
+                                            change_type
+                                        }
+                                    },
+                                    ..field.clone()
+                                })
+                            },
                             ..variant.clone()
                         })
                     }
@@ -502,14 +516,20 @@ impl Definition {
                                 })
                                 .into_iter()
                                 .unzip();
+                            let both_ident = format_ident!("Both{}", variant_name);
                             (
                                 quote! {
                                     #(let #changes_vars = #delta_calls;)*
                                 },
                                 if changes_vars.is_empty() {
                                     quote!(delta::Changed::Unchanged)
+                                } else if changes_vars.len() == 1 {
+                                    quote! {
+                                        #(#changes_vars.map(
+                                            |changes_var0|
+                                            #change_name::#both_ident #assignments))*
+                                    }
                                 } else {
-                                    let both_ident = format_ident!("Both{}", variant_name);
                                     quote! {
                                         if #(#changes_vars.is_unchanged())&&* {
                                             delta::Changed::Unchanged
@@ -747,28 +767,21 @@ impl<'a> Inputs<'a> {
                 panic!("Delta derivation not available for unions");
             }
         };
-        if is_unitary {
-            self.process_unit_struct()
-        } else {
-            self.process_struct_or_enum()
-        }
+        self.process_struct_or_enum(is_unitary)
     }
 
-    fn process_unit_struct(&self) -> Outputs {
-        Outputs {
-            desc: None,
-            change: None,
-        }
-    }
-
-    fn process_struct_or_enum(&self) -> Outputs {
+    fn process_struct_or_enum(&self, is_unitary: bool) -> Outputs {
         Outputs {
             desc: if self.attrs.no_description {
                 None
             } else {
                 Some(Definition::generate_desc_from_data(self))
             },
-            change: Some(Definition::generate_change_from_data(self)),
+            change: if is_unitary {
+                None
+            } else {
+                Some(Definition::generate_change_from_data(self))
+            },
         }
     }
 }

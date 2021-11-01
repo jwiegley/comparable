@@ -87,11 +87,6 @@ fn test_hashset() {
         Changed::Changed(vec![SetChange::Added(3)]),
     );
     assert_changes(
-        &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
-        &HashSet::from(vec![1 as i32, 2].into_iter().collect()),
-        Changed::Changed(vec![SetChange::Removed(3)]),
-    );
-    assert_changes(
         &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed::Changed(vec![SetChange::Added(2)]),

@@ -60,42 +60,12 @@ pub trait Delta {
 
 ### Descriptions: the `Desc` associated type
 
-The reason for value descriptions (`Desc`) is that not every value can or
-should be directly represented in a change report. For example, if two values
-were added to a `Vec`, it would be reported in a change set as follows:
-
-```rust
-vec![ VecChange::Added(_description_),
-      VecChange::Added(_description_)
-    ]
-```
-
-For scalars, it's normal for the `Desc` type to be the same as the type it's
-describing, and these are called "self-describing". But not every type is able
-to implement the `PartialEq` and `Debug` traits needed by `Desc` so that
-change sets can be compared and displayed. For this reason, trait implementors
-are able to define an alternate description type. This can be a reduced form
-of the value, a projection, or some other value entirely.
-
-For example, complex structures could describe themselves by the set of
-changes they represent from a `Default` value. This is so common, in fact,
-that it's supported using a `compare_default` macro attribute provided by
-`delta`:
-
-```rust
-#[derive(Delta)]
-#[compare_default]
-struct Foo { /* ...lots of fields... */ }
-
-impl Default for Foo { /* ... */ }
-```
-
-Another reason why separate `Desc` types are often needed is that value
-hierarchies may involve many types. Perhaps some of these support equality and
-printing, but not all. Thus, if you use the `Delta` derive macro on structure
-or enum types, a "mirror" of the data structure is created with the same
-constructors ands field, but using the `Desc` associated type for each of its
-contained types. For example:
+Value descriptions (the `Desc` associated type) are needed because value
+hierarchies can involve many types. Perhaps some of these types implement
+`PartialEq` and `Debug`, but not all. To work around this limitation, the
+`Delta` derive macro creates a "mirror" of your data structure with all the
+same constructors ands field, but using the `Desc` associated type for each of
+its contained types.
 
 ```rust
 #[derive(Delta)]
@@ -114,6 +84,23 @@ struct FooDesc {
   baz: <Baz as Delta>::Desc
 }
 ```
+
+You may also choose an alternate description type, such as a reduced form of a
+value or some other type entirely. For example, complex structures could
+describe themselves by the set of changes they represent from a `Default`
+value. This is so common, that it's supported via a `compare_default` macro
+attribute provided by `delta`:
+
+```rust
+#[derive(Delta)]
+#[compare_default]
+struct Foo { /* ...lots of fields... */ }
+
+impl Default for Foo { /* ... */ }
+```
+
+For scalars, the `Desc` type is the same as the type it's describing, and
+these are called "self-describing".
 
 There are other macro attributes provided for customizing things even further,
 which are covered below, beginning at the section on [Structures](#structs).
@@ -156,54 +143,74 @@ assert_changes(
 );
 ```
 
-## Collections
+## Vec and Set Collections
 
-The set of collections for which `Delta` has been implemented are: `Vec`,
-`HashSet`, `BTreeSet`, `HashMap` and `HashSet`.
+The set collections for which `Delta` has been implemented are: `Vec`,
+`HashSet`, and `BTreeSet`.
 
-The `Vec`, `HashSet` and `BTreeSet` types all report changes the same way,
-using the `SetChange` type. Further, in order for `HashSet` change results to
-be deterministic, the values in a `HashSet` must also support the `Ord` trait
-so they can be sorted prior to comparison.
+The `Vec` uses `Vec<VecChange>` to report all of the indices at which changes
+happened. Note that it cannot detect insertions in the middle, and so will
+likely report every item as changed from there until the end of the vector, at
+which point it will report an added member.
 
-Some examples follow, using `Vec`. Note that `HashSet` and `BTreeSet` are
-similar, but use a `SetChange` structure that has no `Change` constructor
-since we don't know which values have been changed, only if they have been
-added or removed.
+`HashSet` and `BTreeSet` types both report changes the same way, using the
+`SetChange` type. Note that in order for `HashSet` change results to be
+deterministic, the values in a `HashSet` must support the `Ord` trait so they
+can be sorted prior to comparison. Sets cannot tell when specific members have
+change, and so only report changes in terms of `SetChange::Added` and
+`SetChange::Removed`.
+
+Here are a few examples, taken from the `delta_test` test suite:
 
 ```rust
-assert_changes(&vec![100], &vec![100], Changed::Unchanged);
+// Vectors
 assert_changes(
-    &vec![100],
-    &vec![200],
-    Changed::Changed(vec![VecChange::Change(0, I32Change(100, 200))]),
+    &vec![1 as i32, 2],
+    &vec![1 as i32, 2, 3],
+    Changed::Changed(vec![VecChange::Added(2, 3)]),
 );
 assert_changes(
-    &vec![],
-    &vec![100],
-    Changed::Changed(vec![VecChange::Added(100)]),
+    &vec![1 as i32, 3],
+    &vec![1 as i32, 2, 3],
+    Changed::Changed(vec![
+        VecChange::Changed(1, I32Change(3, 2)),
+        VecChange::Added(2, 3),
+    ]),
 );
 assert_changes(
-    &vec![100],
-    &vec![],
-    Changed::Changed(vec![VecChange::Removed(100)]),
+    &vec![1 as i32, 2, 3],
+    &vec![1 as i32, 3],
+    Changed::Changed(vec![
+        VecChange::Changed(1, I32Change(2, 3)),
+        VecChange::Removed(2, 3),
+    ]),
 );
 assert_changes(
-    &vec![100, 200, 300],
-    &vec![100, 400, 300],
-    Changed::Changed(vec![VecChange::Change(1, I32Change(200, 400))]),
-);
-assert_changes(
-    &vec![100, 200, 300],
-    &vec![100, 400, 300],
-    Changed::Changed(vec![VecChange::Change(1, I32Change(200, 400))]),
+    &vec![1 as i32, 2, 3],
+    &vec![1 as i32, 4, 3],
+    Changed::Changed(vec![VecChange::Changed(1, I32Change(2, 4))]),
 );
 
-// The same as the last example, but use `HashSet` instead of `Vec`
+// Sets
 assert_changes(
-    &HashSet::from(vec![100, 200, 300].into_iter().collect()),
-    &HashSet::from(vec![100, 400, 300].into_iter().collect()),
-    Changed::Changed(vec![SetChange::Added(400), SetChange::Removed(200)]),
+    &HashSet::from(vec![1 as i32, 2].into_iter().collect()),
+    &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+    Changed::Changed(vec![SetChange::Added(3)]),
+);
+assert_changes(
+    &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
+    &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+    Changed::Changed(vec![SetChange::Added(2)]),
+);
+assert_changes(
+    &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+    &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
+    Changed::Changed(vec![SetChange::Removed(2)]),
+);
+assert_changes(
+    &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+    &HashSet::from(vec![1 as i32, 4, 3].into_iter().collect()),
+    Changed::Changed(vec![SetChange::Added(4), SetChange::Removed(2)]),
 );
 ```
 
@@ -241,14 +248,18 @@ failures:
     test_delta_bar
 ```
 
+## Map Collections
+
+jww (2021-11-01): TODO
+
 ## <a name="structs"></a>Structures
 
-Differencing arbitrary structures was the original impetus for creating
-`delta`. This is made feasible with a `Delta` derive macro that auto-generates
-the code needed for such comparisons. The purpose of this section is to
-understand how this macro works, and the various attribute macros that can be
-used to guide the process. If all else fails, manual trait implementations are
-always an alternative.
+Differencing arbitrary structures was the original motive for creating
+`delta`. This is made feasible using a `Delta` derive macro that
+auto-generates code needed for such comparisons. The purpose of this section
+is to explain how this macro works, and the various attribute macros that can
+be used to guide the process. If all else fails, manual trait implementations
+are always an alternative.
 
 For the purpose of the following sub-sections, we consider the following
 structure:
@@ -346,7 +357,7 @@ struct Foo {
 }
 ```
 
-The following code is generated:
+The following is generated:
 
 ```rust
 type Desc = T;
@@ -357,7 +368,7 @@ fn describe(&self) -> Self::Desc {
 ```
 
 This also means that the expression argument passed to `describe_body` may
-reference the `self` parameter. Here is a real-world example:
+reference the `self` parameter. Here is a real-world use case:
 
 ```rust
 #[cfg_attr(feature = "delta",
@@ -367,14 +378,14 @@ reference the `self` parameter. Here is a real-world example:
 ```
 
 This same approach could be used to represent large blobs of data by their
-checksum hash, or large data structures that you don't need displayed by a
-Merkle root hash.
+checksum hash, for example, or large data structures that you don't need to
+ever display by their Merkle root hash.
 
 ### Deriving Delta for structs: the Change type
 
 By default for structs, deriving `Delta` creates an `enum` with variants for
-every field in the `struct`, and associated the `Change` type with a vector of
-such values. This means that for the following definition:
+each field in the `struct`, and it represents changes using a vector of such
+values. This means that for the following definition:
 
 ```rust
 #[derive(Delta)]
@@ -384,8 +395,8 @@ struct Foo {
 }
 ```
 
-The `Change` type is defined to be `Vec<FooChange>`, with `FooChange` defined
-as follows:
+The `Change` type is defined to be `Vec<FooChange>`, with `FooChange` as
+follows:
 
 ```rust
 #[derive(PartialEq, Debug)]
@@ -400,7 +411,7 @@ impl Delta for Foo {
 }
 ```
 
-Here is an abbreviated example:
+Here is an abbreviated example of how this looks when asserting changes:
 
 ```rust
 assert_changes(
@@ -411,48 +422,95 @@ assert_changes(
     ]));
 ```
 
-Of course, if the field hasn't changed it won't appear in the vector, and each
-field appears at most once. The reason for taking this approach is that
-structures with many, many fields can be represented by a very small change
-set if most of the other fields have been left untouched.
+If the field hasn't been changed it won't appear in the vector, and each field
+appears at most once. The reason for taking this approach is that structures
+with many, many fields can be represented by a small change set if most of the
+other fields were left untouched.
 
-#### `public_change` and `private_change`
+#### Special case: Unit structs
+
+If a struct has no fields it can never change, and so only a unitary `Desc`
+type is generated.
+
+#### Special case: Singleton structs
+
+If a struct has only one field, there is no reason to specify changes using a
+vector, since either the struct is unchanged or just that one field has
+changed. For this reason, singleton structs optimize away the vector and use
+`type Change = [type]Change` in their `Delta` derivation, rather than `type
+Change = Vec<[type]Change>` as for multi-field structs.
+
+#### `delta_public` and `delta_private`
 
 By default, the auto-generated `Desc` and `Change` types have the same
-visibility as their parent. This may not be appropriate, though, if you want
-to keep the original data type private but allow exporting of descriptions or
+visibility as their parent. This may not be appropriate, however, if you want
+to keep the original data type private but allow exporting of descriptions and
 change sets. To support this -- and the converse -- you can use
-`#[public_change]` and `#[private_change]` to be explicit about the visibility
-of the generated `Desc` and `Change` types.
+`#[delta_public]` and `#[delta_private]` to be explicit about the visibility
+of these generated types.
+
 
 ## <a name="enums"></a>Enumerations
 
-Enumerations are handled quite a bit differently from structures, for the main
+Enumerations are handled quite differently from structures, for the main
 reason that while a `struct` is always a product of fields, an `enum` can be
-more than just a sum of variants, but also a sum of products.
+more than a sum of variants -- but also a sum of products.
 
-To unpack that a bit: By a product of fields, I mean that a `struct` is a
+To unpack that a bit: By a product of fields, it is meant that a `struct` is a
 simple grouping of typed fields, where the same fields are available for
 _every_ value of such a structure.
 
 Meanwhile, an `enum` is a sum, or choice, among variants, but some of these
-variants can themselves be groups of fields, as though an unnamed structure
-had been embedded in the variant. Consider the following `enum`, which will be
-used for all the following examples:
+variants can themselves contain groups of fields, as though there were an
+unnamed structure embedded in the variant. Consider the following `enum`,
+which will be used for all the following examples:
 
 ```rust
 #[derive(Delta)]
 enum MyEnum {
     One(bool),
     Two { two: Vec<bool>, two_more: Baz },
-    Three(Bar),
-    Four,
+    Three,
 }
 ```
 
-Here we see variant that have unit type (`Four`), unnamed fields (`One` and
-`Three`), and named fields like a usual structure (`Two`). The problem,
-though, is that these embedded structures are never represented as a separate
-type, and so we can't define `Delta` for them.
+Here we see variant that has a variant with no fields (`Three`), one with
+unnamed fields (`One`), and one with named fields like a usual structure
+(`Two`). The problem, though, is that these embedded structures are never
+represented as independent types, so we can't define `Delta` for them and just
+compute the differences between the enum arguments. Nor can we just create a
+copy of the field type with a real name and generate `Delta` for it, because
+not every value is copyable or clonable, and it gets very tricky to
+auto-generate a new hierarchy built out fields with reference types all the
+way down...
+
+Instead, the following gets generated, which can end up being a bit verbose,
+but captures the full nature of any differences:
+
+```rust
+enum MyEnumChange {
+    BothOne(<bool as Delta>::Change),
+    BothTwo {
+        two: Changed<<Vec<bool> as Delta>::Change>,
+        two_more: Changed<Baz as Delta>::Change
+    },
+    BothThree,
+    Different(<MyEnum as Delta>::Desc, <MyEnum as Delta>::Desc),
+}
+```
+
+#### Special case: Unit enums
+
+If a enum has no variants it cannot be constructed, so neither the `Desc` or
+`Change` types are omitted, and it is always reported as unchanged.
+
+#### Special case: Singleton enums
+
+If an enum has only one variant, it is a lot more similar to a structure
+having the same fields as the arguments to the variant than it is to an enum.
+
+jww (2021-11-01): Further description here
 
 ## <a name="unions"></a>Unions
+
+Unions cannot derive `Delta` instances at the present time.
