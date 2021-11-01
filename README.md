@@ -499,17 +499,16 @@ enum MyEnumChange {
 }
 ```
 
-#### Special case: Unit enums
+Note that variants with singleton fields do not use `Change`, since that
+information is already reflected when the variant is reported as having
+changed at all using, for example, `BothOne`. In the case of `BothTwo`, each
+of the field types is wrapped in `Changed` because it's possible that either
+one or both of the fields may changed.
+
+#### Special case: Empty enums
 
 If a enum has no variants it cannot be constructed, so neither the `Desc` or
 `Change` types are omitted, and it is always reported as unchanged.
-
-#### Special case: Singleton enums
-
-If an enum has only one variant, it is a lot more similar to a structure
-having the same fields as the arguments to the variant than it is to an enum.
-
-jww (2021-11-01): Further description here
 
 ## <a name="unions"></a>Unions
 
