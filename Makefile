@@ -1,4 +1,4 @@
-TARGET = $(HOME)/dfinity/fixtures/rs/delta
+TARGET = $(HOME)/dfinity/fixtures/rs/comparable
 
 all: build test
 

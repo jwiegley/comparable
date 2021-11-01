@@ -28,8 +28,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "delta"
-version = "0.0.1"
+name = "comparable"
+version = "0.1.0"
 dependencies = [
  "convert_case",
  "pretty_assertions",

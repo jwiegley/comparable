@@ -9,7 +9,7 @@
 }:
 
 with pkgs; rustPlatform.buildRustPackage rec {
-  pname = "delta";
+  pname = "comparable";
   version = "0.1.0";
 
   src = ./.;
@@ -28,7 +28,7 @@ with pkgs; rustPlatform.buildRustPackage rec {
 
   meta = with lib; {
     description = "Differencing data structures to improve testing";
-    homepage = https://github.com/jwiegley/delta;
+    homepage = https://github.com/jwiegley/comparable;
     license = licenses.mit;
     maintainers = [ maintainers.jwiegley ];
     platforms = platforms.all;
