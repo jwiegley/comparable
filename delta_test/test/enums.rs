@@ -135,3 +135,33 @@ fn test_enum_singleton_variant_named_fields() {
         }),
     );
 }
+
+#[test]
+fn test_enum_same_named_fields() {
+    #[derive(Delta)]
+    enum ScalarNamedEnum {
+        Field1 { some_int: i32 },
+        Field2 { some_int: i32 },
+    }
+
+    assert_changes(
+        &ScalarNamedEnum::Field1 { some_int: 100 },
+        &ScalarNamedEnum::Field1 { some_int: 100 },
+        Changed::Unchanged,
+    );
+    assert_changes(
+        &ScalarNamedEnum::Field1 { some_int: 100 },
+        &ScalarNamedEnum::Field1 { some_int: 200 },
+        Changed::Changed(ScalarNamedEnumChange::BothField1 {
+            some_int: Changed::Changed(I32Change(100, 200)),
+        }),
+    );
+    assert_changes(
+        &ScalarNamedEnum::Field1 { some_int: 100 },
+        &ScalarNamedEnum::Field2 { some_int: 100 },
+        Changed::Changed(ScalarNamedEnumChange::Different(
+            ScalarNamedEnumDesc::Field1 { some_int: 100 },
+            ScalarNamedEnumDesc::Field2 { some_int: 100 },
+        )),
+    );
+}
