@@ -515,8 +515,8 @@ one or both of the fields may changed.
 
 #### Special case: Empty enums
 
-If a enum has no variants it cannot be constructed, so neither the `Desc` or
-`Change` types are omitted, and it is always reported as unchanged.
+If a enum has no variants it cannot be constructed, so both the `Desc` or
+`Change` types are omitted and it is always reported as unchanged.
 
 ## <a name="unions"></a>Unions
 
