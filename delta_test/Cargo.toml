@@ -11,8 +11,7 @@ documentation = "https://github.com/jwiegley/delta"
 keywords = ["delta", "testing"]
 categories = ["testing"]
 readme = "README.md"
-include = ["src/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
-build = "build.rs"
+include = ["test/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
 
 [[test]]
 name = "sample-test"

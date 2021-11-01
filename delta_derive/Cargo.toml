@@ -12,7 +12,6 @@ keywords = ["delta", "testing"]
 categories = ["testing"]
 readme = "README.md"
 include = ["src/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
-build = "build.rs"
 
 [lib]
 name = "delta_derive"
