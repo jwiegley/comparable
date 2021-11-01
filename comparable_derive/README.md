@@ -1,40 +1,41 @@
-# Comparable: Structural differencing in Rust
+# Comparable: Structure differencing in Rust
 
-The `Comparable` crate defines the trait `Comparable`, along with a derive macro for
-auto-generating instances of this trait for most data types. Primarily the
-purpose of this trait is to offer a method, `Comparable`, by which two values of
-any type supporting that trait can yield a summary of the differences between
-them.
+The `comparable` crate defines the trait `Comparable`, along with a derive
+macro for auto-generating instances of this trait for most data types.
+Primarily the purpose of this trait is to offer a method, `comparison`, by
+which two values of any type supporting that trait can yield a summary of the
+differences between them.
 
 Note that unlike other crates that do data differencing (primarily between
-scalars and collections), `Comparable` has been written primarily with testing in
-mind. That is, the purpose of generating such change descriptions is to enable
-writing tests that assert the set of expected changes after some operation
-between an initial state and the resulting state. This goal also means that
-some types, like `HashMap`, must be differenced after ordering the keys first,
-so that the set of changes produced can be made deterministic and thus
-expressible as a test expectation.
+scalars and collections), `comparable` has been written primarily with testing
+in mind. That is, the purpose of generating such change descriptions is to
+enable writing tests that assert the set of expected changes after some
+operation between an initial state and the resulting state. This goal also
+means that some types, like `HashMap`, must be differenced after ordering the
+keys first, so that the set of changes produced can be made deterministic and
+thus expressible as a test expectation.
 
-To these ends, the function `Comparable::assert_changes` is also provided, taking
-two values of the same type along with an expected "change description" as
-returned by `foo.Comparable(&bar)`. This function uses the `pretty_assertions`
-crate under the hood so that minute differences within deep structures can be
-easily seen in the failure output.
+To these ends, the function `comparable::assert_changes` is also provided,
+taking two values of the same type along with an expected "change description"
+as returned by `foo.comparison(&bar)`. This function uses the
+`pretty_assertions` crate under the hood so that minute differences within
+deep structures can be easily seen in the failure output.
 
 ## Quickstart
 
 If you want to get started quickly with the `Comparable` crate to enhance unit
 testing, do the following:
 
-1. Add the `Comparable` crate as a dependency, enabling `features = ["derive"]`.
-2. Derive the `Comparable::Comparable` trait on as many structs and enums as needed.
+1. Add the `comparable` crate as a dependency, enabling `features = ["derive"]`.
+2. Derive the `comparable::Comparable` trait on as many structs and enums as
+   needed.
 3. Structure your unit tests to follow these three phases:
    a. Create the initial state or dataset you intend to test and make a copy
       of it.
    b. Apply your operations and changes to this state.
-   c. Use `Comparable::assert_changes` between the initial state and the resulting
-      state to assert that whatever happened is exactly what you expected to
-      happen.
+   c. Use `comparable::assert_changes` between the initial state and the
+      resulting state to assert that whatever happened is exactly what you
+      expected to happen.
 
 The main benefit of this approach over the usual method of "probing" the
 resulting state -- to ensure it changed as you expected it to-- is that it
@@ -54,7 +55,7 @@ pub trait Comparable {
     fn describe(&self) -> Self::Desc;
 
     type Change: PartialEq + Debug;
-    fn Comparable(&self, other: &Self) -> Changed<Self::Change>;
+    fn comparison(&self, other: &Self) -> Changed<Self::Change>;
 }
 ```
 
@@ -63,9 +64,9 @@ pub trait Comparable {
 Value descriptions (the `Desc` associated type) are needed because value
 hierarchies can involve many types. Perhaps some of these types implement
 `PartialEq` and `Debug`, but not all. To work around this limitation, the
-`Comparable` derive macro creates a "mirror" of your data structure with all the
-same constructors ands field, but using the `Desc` associated type for each of
-its contained types.
+`Comparable` derive macro creates a "mirror" of your data structure with all
+the same constructors ands field, but using the `Desc` associated type for
+each of its contained types.
 
 ```rust
 #[derive(Comparable)]
@@ -89,7 +90,7 @@ You may also choose an alternate description type, such as a reduced form of a
 value or some other type entirely. For example, complex structures could
 describe themselves by the set of changes they represent from a `Default`
 value. This is so common, that it's supported via a `compare_default` macro
-attribute provided by `Comparable`:
+attribute provided by `comparable`:
 
 ```rust
 #[derive(Comparable)]
@@ -108,7 +109,7 @@ which are covered below, beginning at the section on [Structures](#structs).
 ### Changes: the `Change` associated type
 
 When two values of a type differ, this difference gets represented using the
-associated type `Change`. Such values are produced by the `Comparable` method,
+associated type `Change`. Such values are produced by the `comparison` method,
 which actually returns `Changed<Change>` since the result may be either
 `Changed::Unchanged` or `Changed::Changed(_changes_)`.[^option]
 
@@ -127,10 +128,10 @@ each of these types.
 
 ## Scalars
 
-`Comparable` traits have been implemented for all of the basic scalar types. These
-are self-describing, and use a `Change` structure named after the type that
-holds the previous and changed values. For example, the following assertions
-hold:
+`Comparable` traits have been implemented for all of the basic scalar types.
+These are self-describing, and use a `Change` structure named after the type
+that holds the previous and changed values. For example, the following
+assertions hold:
 
 ```rust
 assert_changes(&100, &100, Changed::Unchanged);
@@ -240,7 +241,7 @@ Diff < left / right > :
      ],
  )
 
-', /Users/johnw/src/Comparable/Comparable/src/lib.rs:19:5
+', /Users/johnw/src/comparable/comparable/src/lib.rs:19:5
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 
@@ -255,7 +256,7 @@ jww (2021-11-01): TODO
 ## <a name="structs"></a>Structures
 
 Differencing arbitrary structures was the original motive for creating
-`Comparable`. This is made feasible using a `Comparable` derive macro that
+`comparable`. This is made feasible using a `Comparable` derive macro that
 auto-generates code needed for such comparisons. The purpose of this section
 is to explain how this macro works, and the various attribute macros that can
 be used to guide the process. If all else fails, manual trait implementations
@@ -285,10 +286,10 @@ changed.
 a helper `Change` struct and set that variant's type for the enum's `Change`
 to be `Vec<Change>`.
 
-**TODO**: jww (2021-11-01): Provide an attribute macro `#[comparable_wrap]` that
-defines a wrapping type that can be used for comparison. When the field is
-encountered during `Comparable`, construct a temporary value using the wrapper and
-then call `Comparable` on that.
+**TODO**: jww (2021-11-01): Provide an attribute macro `#[comparable_wrap]`
+that defines a wrapping type that can be used for comparison. When the field
+is encountered during `comparison`, construct a temporary value using the
+wrapper and then call `comparison` on that.
 
 **TODO**: jww (2021-11-01): Provide an attribute macro
 `#[comparable_view(function)]` for defining synthetic properties that receive
@@ -320,7 +321,7 @@ implemented as a comparison against the value of `Default::default()`:
 type Desc = Self::Change;
 
 fn describe(&self) -> Self::Desc {
-    Foo::default().Comparable(self).unwrap_or_default()
+    Foo::default().comparison(self).unwrap_or_default()
 }
 
 type Change = Vec<FooChange>;
@@ -379,8 +380,8 @@ This also means that the expression argument passed to `describe_body` may
 reference the `self` parameter. Here is a real-world use case:
 
 ```rust
-#[cfg_attr(feature = "Comparable",
-           derive(Comparable::Comparable),
+#[cfg_attr(feature = "comparable",
+           derive(comparable::Comparable),
            describe_type(String),
            describe_body(self.to_string()))]
 ```
@@ -445,8 +446,8 @@ type is generated.
 If a struct has only one field, there is no reason to specify changes using a
 vector, since either the struct is unchanged or just that one field has
 changed. For this reason, singleton structs optimize away the vector and use
-`type Change = [type]Change` in their `Comparable` derivation, rather than `type
-Change = Vec<[type]Change>` as for multi-field structs.
+`type Change = [type]Change` in their `Comparable` derivation, rather than
+`type Change = Vec<[type]Change>` as for multi-field structs.
 
 #### `comparable_public` and `comparable_private`
 
@@ -485,11 +486,11 @@ enum MyEnum {
 Here we see variant that has a variant with no fields (`Three`), one with
 unnamed fields (`One`), and one with named fields like a usual structure
 (`Two`). The problem, though, is that these embedded structures are never
-represented as independent types, so we can't define `Comparable` for them and just
-compute the differences between the enum arguments. Nor can we just create a
-copy of the field type with a real name and generate `Comparable` for it, because
-not every value is copyable or clonable, and it gets very tricky to
-auto-generate a new hierarchy built out fields with reference types all the
+represented as independent types, so we can't define `Comparable` for them and
+just compute the differences between the enum arguments. Nor can we just
+create a copy of the field type with a real name and generate `Comparable` for
+it, because not every value is copyable or clonable, and it gets very tricky
+to auto-generate a new hierarchy built out fields with reference types all the
 way down...
 
 Instead, the following gets generated, which can end up being a bit verbose,

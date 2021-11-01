@@ -1,4 +1,4 @@
-use delta::{assert_changes, Changed, I32Change};
+use comparable::{assert_changes, Changed, I32Change};
 
 #[test]
 fn test_box() {

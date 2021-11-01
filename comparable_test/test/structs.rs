@@ -3,11 +3,11 @@
 
 // use std::collections::{BTreeMap, HashMap, HashSet};
 
-use delta::*;
+use comparable::*;
 
 #[test]
 fn test_unit_struct() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     struct Unit;
 
     assert_changes(&Unit, &Unit, Changed::Unchanged);
@@ -15,7 +15,7 @@ fn test_unit_struct() {
 
 #[test]
 fn test_unnamed_singleton_struct_unit_field() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     struct UnitField(());
 
     assert_changes(&UnitField(()), &UnitField(()), Changed::Unchanged);
@@ -23,7 +23,7 @@ fn test_unnamed_singleton_struct_unit_field() {
 
 #[test]
 fn test_unnamed_singleton_struct_scalar_field() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     struct ScalarField(i32);
 
     assert_changes(&ScalarField(100), &ScalarField(100), Changed::Unchanged);
@@ -36,7 +36,7 @@ fn test_unnamed_singleton_struct_scalar_field() {
 
 #[test]
 fn test_unnamed_struct_scalar_fields() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     struct ScalarFields(i32, u64);
 
     assert_changes(
@@ -66,7 +66,7 @@ fn test_unnamed_struct_scalar_fields() {
 
 #[test]
 fn test_named_struct_scalar_fields() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     struct ScalarNamedFields {
         some_int: i32,
         some_ulong: u64,

@@ -1,8 +1,8 @@
 // use serde;
 
-use crate::types::{Changed, Delta, EnumChange};
+use crate::types::{Changed, Comparable, EnumChange};
 
-impl<T: Delta> Delta for Option<T> {
+impl<T: Comparable> Comparable for Option<T> {
     type Desc = Option<T::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -11,10 +11,10 @@ impl<T: Delta> Delta for Option<T> {
 
     type Change = EnumChange<Self::Desc, T::Change>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
         match (self, other) {
             (None, None) => Changed::Unchanged,
-            (Some(x), Some(y)) => x.delta(y).map(EnumChange::SameVariant),
+            (Some(x), Some(y)) => x.comparison(y).map(EnumChange::SameVariant),
             (_, _) => Changed::Changed(EnumChange::DiffVariant(self.describe(), other.describe())),
         }
     }

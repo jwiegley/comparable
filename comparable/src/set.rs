@@ -2,7 +2,7 @@ use std::collections::{BTreeSet, HashSet};
 use std::fmt::Debug;
 // use serde;
 
-use crate::types::{Changed, Delta};
+use crate::types::{Changed, Comparable};
 
 #[derive(
     PartialEq,
@@ -14,7 +14,7 @@ pub enum VecChange<Desc, Change> {
     Removed(usize, Desc),
 }
 
-impl<Value: PartialEq + Delta> Delta for Vec<Value> {
+impl<Value: PartialEq + Comparable> Comparable for Vec<Value> {
     type Desc = Vec<Value::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -23,13 +23,13 @@ impl<Value: PartialEq + Delta> Delta for Vec<Value> {
 
     type Change = Vec<VecChange<Value::Desc, Value::Change>>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         let other_len = other.len();
         for i in 0..self.len() {
             if i >= other_len {
                 changes.push(VecChange::Removed(i, self[i].describe()));
-            } else if let Changed::Changed(change) = self[i].delta(&other[i]) {
+            } else if let Changed::Changed(change) = self[i].comparison(&other[i]) {
                 changes.push(VecChange::Changed(i, change));
             }
         }
@@ -56,7 +56,7 @@ pub enum SetChange<Desc> {
     Removed(Desc),
 }
 
-impl<Value: Ord + Delta> Delta for BTreeSet<Value> {
+impl<Value: Ord + Comparable> Comparable for BTreeSet<Value> {
     type Desc = Vec<Value::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -65,7 +65,7 @@ impl<Value: Ord + Delta> Delta for BTreeSet<Value> {
 
     type Change = Vec<SetChange<Value::Desc>>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         changes.append(
             &mut other
@@ -101,7 +101,7 @@ impl<Value: Ord + Delta> Delta for BTreeSet<Value> {
     }
 }
 
-impl<Value: std::hash::Hash + Ord + Delta> Delta for HashSet<Value> {
+impl<Value: std::hash::Hash + Ord + Comparable> Comparable for HashSet<Value> {
     type Desc = Vec<Value::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -110,7 +110,7 @@ impl<Value: std::hash::Hash + Ord + Delta> Delta for HashSet<Value> {
 
     type Change = Vec<SetChange<Value::Desc>>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         let mut others = other.iter().collect::<Vec<&Value>>();
         others.sort();

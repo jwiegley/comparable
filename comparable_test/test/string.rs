@@ -1,4 +1,4 @@
-use delta::{assert_changes, Changed, StringChange};
+use comparable::{assert_changes, Changed, StringChange};
 
 #[test]
 fn test_string() {

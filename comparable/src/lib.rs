@@ -15,15 +15,15 @@ pub use crate::set::*;
 pub use crate::string::*;
 pub use crate::types::*;
 
-pub fn assert_changes<T: Delta>(left: &T, right: &T, expected: Changed<<T as Delta>::Change>) {
-    pretty_assertions::assert_eq!(expected, left.delta(right))
+pub fn assert_changes<T: Comparable>(left: &T, right: &T, expected: Changed<<T as Comparable>::Change>) {
+    pretty_assertions::assert_eq!(expected, left.comparison(right))
 }
 
-// Re-export #[derive(Delta)].
+// Re-export #[derive(Comparable)].
 //
 // The reason re-exporting is not enabled by default is that disabling it would
 // be annoying for crates that provide handwritten impls or data formats. They
 // would need to disable default features and then explicitly re-enable std.
-#[cfg(feature = "delta_derive")]
+#[cfg(feature = "comparable_derive")]
 #[doc(hidden)]
-pub use delta_derive::*;
+pub use comparable_derive::*;

@@ -83,10 +83,10 @@ pub enum EnumChange<Desc, Change> {
     DiffVariant(Desc, Desc),
 }
 
-pub trait Delta {
+pub trait Comparable {
     /// A type that describes the type under consideration. For many types
     /// this is just the type itself, but some large structures are better
-    /// described by a Delta from the Default, for exmaple.
+    /// described by a comparison from the Default, for exmaple.
     type Desc: PartialEq + Debug;
 
     fn describe(&self) -> Self::Desc;
@@ -94,10 +94,10 @@ pub trait Delta {
     /// A type that describes the changes between to values of a type.
     type Change: PartialEq + Debug;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change>;
+    fn comparison(&self, other: &Self) -> Changed<Self::Change>;
 }
 
-impl<T: Delta> Delta for &T {
+impl<T: Comparable> Comparable for &T {
     type Desc = T::Desc;
 
     fn describe(&self) -> Self::Desc {
@@ -106,7 +106,7 @@ impl<T: Delta> Delta for &T {
 
     type Change = T::Change;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
-        (*self).delta(other)
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
+        (*self).comparison(other)
     }
 }

@@ -3,7 +3,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use delta::{assert_changes, Changed, I32Change, MapChange};
+use comparable::{assert_changes, Changed, I32Change, MapChange};
 
 #[test]
 fn test_hashmap() {

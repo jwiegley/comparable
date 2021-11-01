@@ -2,7 +2,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 
-use crate::types::{Changed, Delta};
+use crate::types::{Changed, Comparable};
 
 #[derive(
     PartialEq,
@@ -14,7 +14,7 @@ pub enum MapChange<Key, Desc, Change> {
     Removed(Key),
 }
 
-impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
+impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, Value> {
     type Desc = BTreeMap<Key, Value::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -25,14 +25,14 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for BTreeMap<Key, Value> {
 
     type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
         changes.append(
             &mut other
                 .iter()
                 .map(|(k, v)| {
                     if let Some(vo) = self.get(k) {
-                        vo.delta(v)
+                        vo.comparison(v)
                             .map(|changes| MapChange::Changed(k.clone(), changes))
                     } else {
                         Changed::Changed(MapChange::Added(k.clone(), v.describe()))
@@ -70,7 +70,7 @@ fn to_btreemap<K: Clone + Ord, V>(map: &HashMap<K, V>) -> BTreeMap<K, &V> {
         .collect()
 }
 
-impl<Key: Ord + Clone + Debug, Value: Delta> Delta for HashMap<Key, Value> {
+impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for HashMap<Key, Value> {
     type Desc = BTreeMap<Key, Value::Desc>;
 
     fn describe(&self) -> Self::Desc {
@@ -81,7 +81,7 @@ impl<Key: Ord + Clone + Debug, Value: Delta> Delta for HashMap<Key, Value> {
 
     type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn delta(&self, other: &Self) -> Changed<Self::Change> {
-        to_btreemap(self).delta(&to_btreemap(other))
+    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
+        to_btreemap(self).comparison(&to_btreemap(other))
     }
 }

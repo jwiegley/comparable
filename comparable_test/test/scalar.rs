@@ -1,7 +1,7 @@
 #![allow(clippy::useless_conversion)]
 #![allow(clippy::unnecessary_cast)]
 
-use delta::{assert_changes, Changed, *};
+use comparable::{assert_changes, Changed, *};
 
 #[test]
 fn test_unit() {

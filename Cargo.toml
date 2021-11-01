@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "delta",
-  "delta_derive",
-  "delta_test",
+  "comparable",
+  "comparable_derive",
+  "comparable_test",
 ]

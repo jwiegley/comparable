@@ -3,7 +3,7 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use delta::{assert_changes, Changed, I32Change, SetChange, VecChange};
+use comparable::{assert_changes, Changed, I32Change, SetChange, VecChange};
 
 #[test]
 fn test_vec() {

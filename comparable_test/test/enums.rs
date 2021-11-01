@@ -3,11 +3,11 @@
 
 // use std::collections::{BTreeMap, HashMap, HashSet};
 
-use delta::*;
+use comparable::*;
 
 #[test]
 fn test_unit_enum() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum Unit {}
 
     // These can never be instantianted.
@@ -15,7 +15,7 @@ fn test_unit_enum() {
 
 #[test]
 fn test_enum_singleton_variant_unit_field() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum UnitEnum {
         Field,
     }
@@ -25,7 +25,7 @@ fn test_enum_singleton_variant_unit_field() {
 
 #[test]
 fn test_enum_singleton_variant_scalar_field() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum ScalarEnum {
         Field(i32),
     }
@@ -44,7 +44,7 @@ fn test_enum_singleton_variant_scalar_field() {
 
 #[test]
 fn test_enum_same_fields() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum ScalarEnum {
         Field1(i32),
         Field2(i32),
@@ -72,7 +72,7 @@ fn test_enum_same_fields() {
 
 #[test]
 fn test_enum_singleton_variant_one_named_field() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field { some_int: i32 },
     }
@@ -93,7 +93,7 @@ fn test_enum_singleton_variant_one_named_field() {
 
 #[test]
 fn test_enum_singleton_variant_named_fields() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field { some_int: i32, some_ulong: u64 },
     }
@@ -155,7 +155,7 @@ fn test_enum_singleton_variant_named_fields() {
 
 #[test]
 fn test_enum_same_named_fields() {
-    #[derive(Delta)]
+    #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field1 { some_int: i32 },
         Field2 { some_int: i32 },

@@ -8,18 +8,18 @@ fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a syn:
 }
 
 #[proc_macro_derive(
-    Delta,
+    Comparable,
     attributes(
         describe_type,
         describe_body,
         no_description,
         compare_default,
-        delta_public,
-        delta_private,
-        delta_ignore
+        comparable_public,
+        comparable_private,
+        comparable_ignore
     )
 )]
-pub fn delta_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn comparable_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     let inputs: Inputs = Inputs::from(&input);
     let outputs: Outputs = inputs.process_data();
@@ -37,9 +37,9 @@ impl<'a> Inputs<'a> {
     fn from(input: &'a syn::DeriveInput) -> Self {
         let attrs = Attributes::from(&input.attrs);
 
-        let visibility = if attrs.delta_private {
+        let visibility = if attrs.comparable_private {
             syn::Visibility::Inherited
-        } else if attrs.delta_public {
+        } else if attrs.comparable_public {
             syn::Visibility::Public(syn::VisPublic {
                 pub_token: syn::token::Pub {
                     span: Span::call_site(),
@@ -62,8 +62,8 @@ struct Attributes {
     describe_body: Option<syn::Expr>,
     no_description: bool,
     compare_default: bool,
-    delta_public: bool,
-    delta_private: bool,
+    comparable_public: bool,
+    comparable_private: bool,
 }
 
 impl Attributes {
@@ -79,8 +79,8 @@ impl Attributes {
             }),
             no_description: has_attr(attrs, "no_description").is_some(),
             compare_default: has_attr(attrs, "compare_default").is_some(),
-            delta_public: has_attr(attrs, "delta_public").is_some(),
-            delta_private: has_attr(attrs, "delta_private").is_some(),
+            comparable_public: has_attr(attrs, "comparable_public").is_some(),
+            comparable_private: has_attr(attrs, "comparable_private").is_some(),
         }
     }
 }
@@ -89,7 +89,7 @@ struct Definition {
     ty: syn::Type,
     definition: Option<TokenStream>,
     // For `Desc` types, the method body is for `describe`.
-    // For `Change` types, the method body is for `delta`.
+    // For `Change` types, the method body is for `comparison`.
     method_body: TokenStream,
 }
 
@@ -100,12 +100,12 @@ impl Definition {
 
     fn assoc_type(ty: &syn::Type, name: &str) -> syn::Type {
         let ident = format_ident!("{}", name);
-        syn::parse2(quote!(<#ty as delta::Delta>::#ident))
+        syn::parse2(quote!(<#ty as comparable::Comparable>::#ident))
             .unwrap_or_else(|_| panic!("Failed to parse associated type"))
     }
 
     fn changed_type(ty: &syn::Type) -> syn::Type {
-        syn::parse2(quote!(delta::Changed<#ty>))
+        syn::parse2(quote!(comparable::Changed<#ty>))
             .unwrap_or_else(|_| panic!("Failed to parse Changed type"))
     }
 
@@ -148,7 +148,7 @@ impl Definition {
                     |x| quote!(#x),
                 )
                 .unwrap_or(if inputs.attrs.compare_default {
-                    quote!(#type_name::default().delta(self).unwrap_or_default())
+                    quote!(#type_name::default().comparison(self).unwrap_or_default())
                 } else {
                     Self::generate_describe_body(
                         &inputs.input.ident,
@@ -240,7 +240,7 @@ impl Definition {
                 }
             }
             syn::Data::Union(_un) => {
-                panic!("delta_derive::generate_describe_body not implemented for unions")
+                panic!("comparable_derive::generate_describe_body not implemented for unions")
             }
         }
     }
@@ -261,7 +261,11 @@ impl Definition {
             })
             .expect("Failed to parse Change type name"),
             definition: Some(quote!(#change_type)),
-            method_body: Self::generate_delta_body(type_name, &change_name, &inputs.input.data),
+            method_body: Self::generate_comparable_body(
+                type_name,
+                &change_name,
+                &inputs.input.data,
+            ),
         }
     }
 
@@ -377,13 +381,13 @@ impl Definition {
             syn::Data::Struct(st) => Self::generate_change_type_from_datastruct(st),
             syn::Data::Enum(en) => Self::generate_change_type_from_dataenum(type_name, en),
             syn::Data::Union(_un) => {
-                panic!("delta_derive::generate_change_type not implemented for unions")
+                panic!("comparable_derive::generate_change_type not implemented for unions")
             }
         }
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn generate_delta_body(
+    fn generate_comparable_body(
         type_name: &syn::Ident,
         change_name: &syn::Ident,
         data: &syn::Data,
@@ -425,28 +429,28 @@ impl Definition {
                 if Self::is_datastruct_with_many_fields(st) {
                     quote! {
                         let changes: Vec<#change_name> = vec![
-                            #(self.#field_names.delta(&other.#field_names)
+                            #(self.#field_names.comparison(&other.#field_names)
                                   .map(#change_name::#field_variants)),*
                         ]
                             .into_iter()
                             .flatten()
                             .collect();
                         if changes.is_empty() {
-                            delta::Changed::Unchanged
+                            comparable::Changed::Unchanged
                         } else {
-                            delta::Changed::Changed(changes)
+                            comparable::Changed::Changed(changes)
                         }
                     }
                 } else {
                     quote! {
-                        #(self.#field_names.delta(&other.#field_names).map(#change_name))*
+                        #(self.#field_names.comparison(&other.#field_names).map(#change_name))*
                     }
                 }
             }
             syn::Data::Enum(en) => {
-                if en.variants.len() < 1 {
+                if en.variants.is_empty() {
                     quote! {
-                        delta::Changed::Unchanged
+                        comparable::Changed::Unchanged
                     }
                 } else {
                     let inspect_variant = |prefix: &syn::Ident,
@@ -504,25 +508,27 @@ impl Definition {
                             let variant_name = &variant.ident;
                             let (_, assignments) =
                                 inspect_variant(&format_ident!("not_used"), variant);
-                            let (changes_vars, delta_calls): (Vec<syn::Ident>, Vec<TokenStream>) =
-                                map_over_fields(&variant.fields, |index, _| {
-                                    (format_ident!("changes_var{}", index), {
-                                        let self_var = format_ident!("self_var{}", index);
-                                        let other_var = format_ident!("other_var{}", index);
-                                        quote! {
-                                            #self_var.delta(&#other_var)
-                                        }
-                                    })
+                            let (changes_vars, comparable_calls): (
+                                Vec<syn::Ident>,
+                                Vec<TokenStream>,
+                            ) = map_over_fields(&variant.fields, |index, _| {
+                                (format_ident!("changes_var{}", index), {
+                                    let self_var = format_ident!("self_var{}", index);
+                                    let other_var = format_ident!("other_var{}", index);
+                                    quote! {
+                                        #self_var.comparison(&#other_var)
+                                    }
                                 })
-                                .into_iter()
-                                .unzip();
+                            })
+                            .into_iter()
+                            .unzip();
                             let both_ident = format_ident!("Both{}", variant_name);
                             (
                                 quote! {
-                                    #(let #changes_vars = #delta_calls;)*
+                                    #(let #changes_vars = #comparable_calls;)*
                                 },
                                 if changes_vars.is_empty() {
-                                    quote!(delta::Changed::Unchanged)
+                                    quote!(comparable::Changed::Unchanged)
                                 } else if changes_vars.len() == 1 {
                                     quote! {
                                         #(#changes_vars.map(
@@ -532,9 +538,9 @@ impl Definition {
                                 } else {
                                     quote! {
                                         if #(#changes_vars.is_unchanged())&&* {
-                                            delta::Changed::Unchanged
+                                            comparable::Changed::Unchanged
                                         } else {
-                                            delta::Changed::Changed(
+                                            comparable::Changed::Changed(
                                                 #change_name::#both_ident #assignments
                                             )
                                         }
@@ -552,7 +558,7 @@ impl Definition {
 
                     let default_case = if en.variants.len() > 1 {
                         quote! {
-                            (_, _) => delta::Changed::Changed(
+                            (_, _) => comparable::Changed::Changed(
                                 #change_name::Different(self.describe(), other.describe()))
                         }
                     } else {
@@ -572,7 +578,7 @@ impl Definition {
                 }
             }
             syn::Data::Union(_un) => {
-                panic!("delta_derive::generate_delta_body not implemented for unions")
+                panic!("comparable_derive::generate_comparable_body not implemented for unions")
             }
         }
     }
@@ -674,7 +680,7 @@ impl Definition {
                 }
             }),
             syn::Data::Union(_un) => {
-                panic!("delta_derive::generate_type_definition not implemented for unions")
+                panic!("comparable_derive::generate_type_definition not implemented for unions")
             }
         };
         quote! {
@@ -698,7 +704,7 @@ struct Outputs {
     change: Option<Definition>,
 }
 
-fn impl_delta(
+fn impl_comparable(
     name: &syn::Ident,
     describe_type: &syn::Type,
     describe_body: &TokenStream,
@@ -706,14 +712,14 @@ fn impl_delta(
     change_body: &TokenStream,
 ) -> TokenStream {
     quote! {
-        impl delta::Delta for #name {
+        impl comparable::Comparable for #name {
             type Desc = #describe_type;
             fn describe(&self) -> Self::Desc {
                 #describe_body
             }
 
             type Change = #change_type;
-            fn delta(&self, other: &Self) -> delta::Changed<Self::Change> {
+            fn comparison(&self, other: &Self) -> comparable::Changed<Self::Change> {
                 #change_body
             }
         }
@@ -732,7 +738,7 @@ fn unit_type() -> syn::Type {
 impl Outputs {
     fn generate(self, inputs: &Inputs) -> TokenStream {
         let Outputs { desc, change } = self;
-        let impl_delta = impl_delta(
+        let impl_comparable = impl_comparable(
             &inputs.input.ident,
             desc.as_ref().map(|d| &d.ty).unwrap_or(&unit_type()),
             desc.as_ref().map(|d| &d.method_body).unwrap_or(&quote!()),
@@ -740,7 +746,7 @@ impl Outputs {
             change
                 .as_ref()
                 .map(|c| &c.method_body)
-                .unwrap_or(&quote!(delta::Changed::Unchanged)),
+                .unwrap_or(&quote!(comparable::Changed::Unchanged)),
         );
         #[allow(unused_variables)] // compiler doesn't see the use of x
         let desc = desc.map(|x| quote!(#x)).unwrap_or_default();
@@ -749,7 +755,7 @@ impl Outputs {
         quote! {
             #desc
             #change
-            #impl_delta
+            #impl_comparable
         }
     }
 }
@@ -764,7 +770,7 @@ impl<'a> Inputs<'a> {
             },
             syn::Data::Enum(en) => en.variants.is_empty(),
             syn::Data::Union(_st) => {
-                panic!("Delta derivation not available for unions");
+                panic!("Comparable derivation not available for unions");
             }
         };
         self.process_struct_or_enum(is_unitary)
@@ -862,7 +868,7 @@ fn map_fields<'a, R>(
         .into_iter()
         .zip(0usize..)
         .map(|(field, index)| {
-            if has_attr(&field.attrs, "delta_ignore").is_none() {
+            if has_attr(&field.attrs, "comparable_ignore").is_none() {
                 Some(f(index, field))
             } else {
                 None
@@ -879,7 +885,7 @@ fn map_variants<'a, R>(
     variants
         .into_iter()
         .map(|variant| {
-            if has_attr(&variant.attrs, "delta_ignore").is_none() {
+            if has_attr(&variant.attrs, "comparable_ignore").is_none() {
                 Some(f(variant))
             } else {
                 None

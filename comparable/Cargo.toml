@@ -1,14 +1,14 @@
 [package]
-name = "delta"
+name = "comparable"
 version = "0.1.0"
 authors = ["John Wiegley"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 description = "A library for comparing data structures in Rust, oriented toward testing"
-homepage = "https://github.com/jwiegley/delta"
-repository = "https://github.com/jwiegley/delta"
-documentation = "https://github.com/jwiegley/delta"
-keywords = ["delta", "testing"]
+homepage = "https://github.com/jwiegley/comparable"
+repository = "https://github.com/jwiegley/comparable"
+documentation = "https://github.com/jwiegley/comparable"
+keywords = ["comparable", "testing"]
 categories = ["development-tools"]
 readme = "README.md"
 include = ["src/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
@@ -19,14 +19,14 @@ path = "src/lib.rs"
 [dependencies]
 pretty_assertions = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-delta_derive = { version = "0.1", optional = true, path = "../delta_derive" }
+comparable_derive = { version = "0.1", optional = true, path = "../comparable_derive" }
 
 [dev-dependencies]
-delta_derive = { version = "0.1", path = "../delta_derive" }
+comparable_derive = { version = "0.1", path = "../comparable_derive" }
 
 [package.metadata.playground]
 features = ["derive"]
 
 [features]
-# Provide derive(Delta) macro.
-derive = ["delta_derive"]
+# Provide derive(Comparable) macro.
+derive = ["comparable_derive"]

@@ -12,6 +12,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "comparable"
+version = "0.1.0"
+dependencies = [
+ "comparable_derive",
+ "pretty_assertions",
+ "serde",
+]
+
+[[package]]
+name = "comparable_derive"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "comparable_test"
+version = "0.1.0"
+dependencies = [
+ "comparable",
+ "serde",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -25,33 +52,6 @@ checksum = "ccc0a48a9b826acdf4028595adc9db92caea352f7af011a3034acd172a52a0aa"
 dependencies = [
  "quote",
  "syn",
-]
-
-[[package]]
-name = "delta"
-version = "0.1.0"
-dependencies = [
- "delta_derive",
- "pretty_assertions",
- "serde",
-]
-
-[[package]]
-name = "delta_derive"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "delta_test"
-version = "0.1.0"
-dependencies = [
- "delta",
- "serde",
 ]
 
 [[package]]
