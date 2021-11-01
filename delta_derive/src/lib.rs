@@ -546,28 +546,21 @@ impl Outputs {
 
 impl<'a> Inputs<'a> {
     fn process_data(&self) -> Outputs {
-        match &self.input.data {
+        let is_unitary = match &self.input.data {
             syn::Data::Struct(st) => match &st.fields {
-                syn::Fields::Unit => self.process_unit_struct(),
-                syn::Fields::Unnamed(unnamed) => match unnamed.unnamed.len() {
-                    0 => self.process_unit_struct(),
-                    1 => self.process_struct_single_field(&unnamed.unnamed[0]),
-                    _ => self.process_struct_unnamed_fields(&unnamed.unnamed),
-                },
-                syn::Fields::Named(named) => match named.named.len() {
-                    0 => self.process_unit_struct(),
-                    1 => self.process_struct_single_field(&named.named[0]),
-                    _ => self.process_struct_named_fields(&named.named),
-                },
+                syn::Fields::Unit => true,
+                syn::Fields::Unnamed(unnamed) => unnamed.unnamed.len() == 0,
+                syn::Fields::Named(named) => named.named.len() == 0,
             },
-            syn::Data::Enum(en) => match en.variants.len() {
-                0 => self.process_unit_struct(),
-                1 => self.process_enum_single_variant(&en.variants[0]),
-                _ => self.process_enum(&en.variants),
-            },
+            syn::Data::Enum(en) => en.variants.len() == 0,
             syn::Data::Union(_st) => {
                 panic!("Delta derivation not yet implemented for unions");
             }
+        };
+        if is_unitary {
+            self.process_unit_struct()
+        } else {
+            self.process_struct_or_enum()
         }
     }
 
@@ -578,7 +571,7 @@ impl<'a> Inputs<'a> {
         }
     }
 
-    fn process_struct_single_field(&self, _field: &syn::Field) -> Outputs {
+    fn process_struct_or_enum(&self) -> Outputs {
         Outputs {
             desc: if self.attrs.no_description {
                 None
@@ -587,66 +580,6 @@ impl<'a> Inputs<'a> {
             },
             change: Some(Definition::generate_change_from_data(self)),
         }
-    }
-
-    fn process_struct_unnamed_fields(
-        &self,
-        _fields: impl IntoIterator<Item = &'a syn::Field>,
-    ) -> Outputs {
-        Outputs {
-            desc: if self.attrs.no_description {
-                None
-            } else {
-                Some(Definition::generate_desc_from_data(self))
-            },
-            change: Some(Definition::generate_change_from_data(self)),
-        }
-    }
-
-    fn process_struct_named_fields(
-        &self,
-        _fields: impl IntoIterator<Item = &'a syn::Field>,
-    ) -> Outputs {
-        Outputs {
-            desc: if self.attrs.no_description {
-                None
-            } else {
-                Some(Definition::generate_desc_from_data(self))
-            },
-            change: Some(Definition::generate_change_from_data(self)),
-        }
-    }
-
-    fn process_enum_single_variant(&self, _variant: &syn::Variant) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum(&self, _variants: impl IntoIterator<Item = &'a syn::Variant>) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_unit_variant(&self) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_unit_single_variant(&self) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_variant_single_unnamed_field(&self) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_variant_unnamed_fields(&self) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_variant_single_named_field(&self) -> Outputs {
-        panic!("NYI")
-    }
-
-    fn process_enum_variant_named_fields(&self) -> Outputs {
-        panic!("NYI")
     }
 }
 
