@@ -7,19 +7,34 @@ use delta::*;
 
 #[test]
 fn test_unit_struct() {
-    // jww (2021-10-31): Should only need to derive Delta here
-    #[derive(Delta, Clone, Debug, PartialEq)]
+    #[derive(Delta)]
     struct Unit;
 
     assert_changes(&Unit, &Unit, Changed::Unchanged);
 }
 
 #[test]
-fn test_unnamed_singleton_struct_unit_field() {}
+fn test_unnamed_singleton_struct_unit_field() {
+    #[derive(Delta)]
+    struct UnitField();
+
+    assert_changes(&UnitField(), &UnitField(), Changed::Unchanged);
+}
 
 #[test]
-fn test_unnamed_singleton_struct_scalar_field() {}
+fn test_unnamed_singleton_struct_scalar_field() {
+    #[derive(Delta)]
+    struct ScalarField(i32);
 
+    assert_changes(&ScalarField(100), &ScalarField(100), Changed::Unchanged);
+    assert_changes(
+        &ScalarField(100),
+        &ScalarField(200),
+        Changed::Changed(ScalarFieldChange(I32Change(100, 200))),
+    );
+}
+
+/*
 #[test]
 fn test_unnamed_singleton_struct_vec_field() {}
 
@@ -325,3 +340,4 @@ fn test_delta_bar() {
         Changed::Changed(QaluxChange(BoolChange(true, false))),
     );
 }
+*/
