@@ -9,7 +9,7 @@ homepage = "https://github.com/jwiegley/delta"
 repository = "https://github.com/jwiegley/delta"
 documentation = "https://github.com/jwiegley/delta"
 keywords = ["delta", "testing"]
-categories = ["testing"]
+categories = ["development-tools"]
 readme = "README.md"
 include = ["test/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
 
