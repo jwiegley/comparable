@@ -1,7 +1,7 @@
 #![allow(clippy::useless_conversion)]
 #![allow(clippy::unnecessary_cast)]
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+// use std::collections::{BTreeMap, HashMap, HashSet};
 
 use delta::*;
 
@@ -16,9 +16,9 @@ fn test_unit_struct() {
 #[test]
 fn test_unnamed_singleton_struct_unit_field() {
     #[derive(Delta)]
-    struct UnitField();
+    struct UnitField(());
 
-    assert_changes(&UnitField(), &UnitField(), Changed::Unchanged);
+    assert_changes(&UnitField(()), &UnitField(()), Changed::Unchanged);
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn test_named_struct_scalar_fields() {
     struct ScalarNamedFields {
         some_int: i32,
         some_ulong: u64,
-    };
+    }
 
     assert_changes(
         &ScalarNamedFields {

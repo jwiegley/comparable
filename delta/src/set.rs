@@ -112,10 +112,10 @@ impl<Value: std::hash::Hash + Ord + Delta> Delta for HashSet<Value> {
 
     fn delta(&self, other: &Self) -> Changed<Self::Change> {
         let mut changes = Vec::new();
+        let mut others = other.iter().collect::<Vec<&Value>>();
+        others.sort();
         changes.append(
-            &mut other
-                .iter()
-                .collect::<BTreeSet<&Value>>()
+            &mut others
                 .iter()
                 .map(|v| {
                     if self.contains(v) {
@@ -127,8 +127,10 @@ impl<Value: std::hash::Hash + Ord + Delta> Delta for HashSet<Value> {
                 .flatten()
                 .collect(),
         );
+        let mut selfs = self.iter().collect::<Vec<&Value>>();
+        selfs.sort();
         changes.append(
-            &mut self
+            &mut selfs
                 .iter()
                 .map(|v| {
                     if !other.contains(v) {
