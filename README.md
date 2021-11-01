@@ -278,14 +278,18 @@ The first attribute macro you'll notice that can be applied to individual
 fields is `#[delta_ignore]`, which must be used if the type in question cannot
 be compared for differences.
 
-**TODO**: Provide an attribute macro `#[delta_wrap]` that defines a wrapping
-type that can be used for comparison. When the field is encountered during
-`delta`, construct a temporary value using the wrapper and then call `delta`
-on that.
+**TODO**: jww (2021-11-01): Allow the `Desc` and `Change` suffixes to both be
+changed.
 
-**TODO**: Provide an attribute macro `#[delta_view(function)]` for defining
-synthetic properties that receive `&self` as an argument and return a type
-implementing `Delta` that can be differenced.
+**TODO**: jww (2021-11-01): Provide an attribute macro `#[delta_wrap]` that
+defines a wrapping type that can be used for comparison. When the field is
+encountered during `delta`, construct a temporary value using the wrapper and
+then call `delta` on that.
+
+**TODO**: jww (2021-11-01): Provide an attribute macro
+`#[delta_view(function)]` for defining synthetic properties that receive
+`&self` as an argument and return a type implementing `Delta` that can be
+differenced.
 
 ### Deriving Delta for structs: the Desc type
 
