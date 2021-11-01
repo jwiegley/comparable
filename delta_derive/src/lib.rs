@@ -71,36 +71,6 @@ struct Attributes {
 
 impl Attributes {
     fn from(attrs: &[syn::Attribute]) -> Self {
-        /*
-                let desc_type = if has_attr(&input.attrs, "no_description").is_some() {
-                    quote!(())
-                } else if let Some(ty) = has_attr(&input.attrs, "describe_type").map(|x| {
-                    x.parse_args::<syn::Type>()
-                        .expect("Failed to parse \"describe_type\" attribute")
-                        .into_token_stream()
-                }) {
-                    ty
-                } else if compare_default {
-                    quote!(Self::Change)
-                } else {
-                    quote!(Self)
-                };
-
-                let desc_body = if has_attr(&input.attrs, "no_description").is_some() {
-                    quote!(())
-                } else if let Some(body) = has_attr(&input.attrs, "describe_body").map(|x| {
-                    x.parse_args::<syn::Expr>()
-                        .expect("Failed to parse \"describe_body\" attribute")
-                        .into_token_stream()
-                }) {
-                    body
-                } else if compare_default {
-                    quote!(#type_name::default().delta(self).unwrap_or_default())
-                } else {
-                    quote!((*self).clone())
-                };
-        */
-
         Attributes {
             describe_type: has_attr(attrs, "describe_type").map(|x| {
                 x.parse_args::<syn::Type>()
@@ -120,41 +90,65 @@ impl Attributes {
 
 struct Definition {
     ty: syn::Type,
-    definition: TokenStream,
+    definition: Option<TokenStream>,
     // For `Desc` types, the method body is for `describe`.
     // For `Change` types, the method body is for `delta`.
     method_body: TokenStream,
-    impl_section: Option<TokenStream>,
 }
 
 impl Definition {
-    fn assoc_type(ty: &syn::Type, name: &str) -> TokenStream {
+    fn assoc_type(ty: &syn::Type, name: &str) -> syn::Type {
         let ident = format_ident!("{}", name);
-        quote!(<#ty as delta::Delta>::#ident)
+        syn::parse2(quote!(<#ty as delta::Delta>::#ident))
+            .expect(&format!("Failed to parse associated type"))
     }
 
     fn generate_desc_from_data(inputs: &Inputs) -> Self {
+        let type_name = &inputs.input.ident;
         let desc_name = format_ident!("{}Desc", &inputs.input.ident);
-        let desc = Self::generate_type_definition(
+        let desc_type = Self::generate_type_definition(
             &inputs.visibility,
             &desc_name,
             &map_on_types_of_fields_over_data(&inputs.input.data, |ty| {
-                syn::parse2(Self::assoc_type(ty, "Desc"))
-                    .expect(&format!("Failed to parse associated type for Desc"))
+                Self::assoc_type(ty, "Desc")
             }),
         );
         Self {
-            ty: syn::parse2(quote!(#desc_name)).expect("Failed to parse Desc type name"),
-            definition: quote! {
-                #[derive(Clone, Debug, PartialEq)]
-                #desc
+            ty: inputs
+                .attrs
+                .describe_type
+                .as_ref()
+                .unwrap_or(
+                    &syn::parse2(if inputs.attrs.compare_default {
+                        quote!(Self::Change)
+                    } else {
+                        quote!(#desc_name)
+                    })
+                    .expect("Failed to parse Desc type name"),
+                )
+                .clone(),
+            definition: if inputs.attrs.describe_type.is_some() || inputs.attrs.compare_default {
+                None
+            } else {
+                Some(quote!(#desc_type))
             },
-            method_body: Self::generate_describe_body(
-                &inputs.input.ident,
-                &desc_name,
-                &inputs.input.data,
-            ),
-            impl_section: None,
+            method_body: inputs
+                .attrs
+                .describe_body
+                .as_ref()
+                .map(
+                    #[allow(unused_variables)] // compiler doesn't see the use of x
+                    |x| quote!(#x),
+                )
+                .unwrap_or(if inputs.attrs.compare_default {
+                    quote!(#type_name::default().delta(self).unwrap_or_default())
+                } else {
+                    Self::generate_describe_body(
+                        &inputs.input.ident,
+                        &desc_name,
+                        &inputs.input.data,
+                    )
+                }),
         }
     }
 
@@ -242,118 +236,140 @@ impl Definition {
     }
 
     fn generate_change_from_data(inputs: &Inputs) -> Self {
-        let visibility = &inputs.visibility;
         let change_name = format_ident!("{}Change", &inputs.input.ident);
-        let change = Self::generate_type_definition(
+        let change_type = Self::generate_type_definition(
             &inputs.visibility,
             &change_name,
-            &map_on_types_of_fields_over_data(&inputs.input.data, |ty| {
-                syn::parse2(Self::assoc_type(ty, "Change"))
-                    .expect(&format!("Failed to parse associated type for Desc"))
-            }),
+            &Self::generate_change_type(&inputs.input.data),
         );
-        // let is_unchanged_body =
-        //     Self::generate_is_unchanged_body(&inputs.input.ident, &change_name, &inputs.input.data);
         Self {
-            ty: syn::parse2(quote!(#change_name)).expect("Failed to parse Change type name"),
-            definition: quote! {
-                #[derive(Clone, Debug, PartialEq)]
-                #change
-            },
-            method_body: Self::generate_delta_body(
-                &inputs.input.ident,
-                &change_name,
-                &inputs.input.data,
-            ),
-            impl_section: None
-            // impl_section: Some(quote! {
-            //     impl #change_name {
-            //         #visibility fn is_unchanged(&self) -> bool {
-            //             match self {
-            //                 #(#is_unchanged_body),*
-            //             }
-            //         }
-            //     }
-            // }),
+            ty: syn::parse2(if Self::is_struct_with_many_fields(&inputs.input.data) {
+                quote!(Vec<#change_name>)
+            } else {
+                quote!(#change_name)
+            })
+            .expect("Failed to parse Change type name"),
+            definition: Some(quote!(#change_type)),
+            method_body: Self::generate_delta_body(&change_name, &inputs.input.data),
         }
     }
 
-    fn generate_delta_body(
-        type_name: &syn::Ident,
-        desc_name: &syn::Ident,
-        data: &syn::Data,
-    ) -> TokenStream {
+    fn generate_change_type(data: &syn::Data) -> syn::Data {
         match data {
-            syn::Data::Struct(st) => match &st.fields {
-                syn::Fields::Named(named) => {
-                    let field_names = map_fields(named.named.iter(), |_, field| {
-                        field
-                            .ident
-                            .as_ref()
-                            .expect("Found unnamed field in named struct")
-                            .clone()
-                    });
-                    quote! {
-                        #desc_name {
-                            #(#field_names: self.#field_names.describe()),*
+            syn::Data::Struct(st) => {
+                if Self::is_struct_with_many_fields(data) {
+                    let change_field = |index: usize, field: &syn::Field| -> syn::Variant {
+                        let ident: syn::Ident = if let Some(name) = field.ident.as_ref() {
+                            syn::Ident::new(
+                                &name.to_string().to_case(Case::Pascal),
+                                Span::call_site(),
+                            )
+                        } else {
+                            format_ident!("Field{}", index)
+                        };
+                        syn::Variant {
+                            ident,
+                            fields: syn::Fields::Unnamed(syn::FieldsUnnamed {
+                                unnamed: FromIterator::from_iter(vec![syn::Field {
+                                    ty: Definition::assoc_type(&field.ty, "Change"),
+                                    attrs: Default::default(),
+                                    vis: syn::Visibility::Inherited,
+                                    ident: Default::default(),
+                                    colon_token: Default::default(),
+                                }]),
+                                paren_token: Default::default(),
+                            }),
+                            attrs: Default::default(),
+                            discriminant: Default::default(),
                         }
-                    }
-                }
-                syn::Fields::Unnamed(unnamed) => {
-                    let field_indices =
-                        map_fields(unnamed.unnamed.iter(), |index, _| syn::Index::from(index));
-                    quote! {
-                        #desc_name(#(self.#field_indices.describe()),*)
-                    }
-                }
-                syn::Fields::Unit => {
-                    quote! {}
-                }
-            },
-            syn::Data::Enum(en) => {
-                let cases = map_variants(en.variants.iter(), |variant| {
-                    let variant_name = &variant.ident;
-                    match &variant.fields {
-                        syn::Fields::Named(named) => {
-                            let (field_indices, field_names): (Vec<syn::Index>, Vec<syn::Ident>) =
-                                map_fields(named.named.iter(), |index, field| {
-                                    (
-                                        syn::Index::from(index),
-                                        field
-                                            .ident
-                                            .as_ref()
-                                            .expect("Found unnamed field in named struct")
-                                            .clone(),
-                                    )
-                                })
-                                .into_iter()
-                                .unzip();
-                            quote! {
-                                #type_name::#variant_name { #(#field_names: var#field_indices),* } =>
-                                #desc_name::#variant_name { #(#field_names: var#field_indices.describe()),* }
-                            }
-                        }
+                    };
+                    let variants = match &st.fields {
+                        syn::Fields::Named(named) => map_fields(named.named.iter(), change_field),
                         syn::Fields::Unnamed(unnamed) => {
-                            let field_indices = map_fields(unnamed.unnamed.iter(), |index, _| {
-                                syn::Index::from(index)
-                            });
-                            quote! {
-                                #type_name::#variant_name(#(var#field_indices),*) =>
-                                #desc_name::#variant_name(#(var#field_indices.describe()),*)
-                            }
+                            map_fields(unnamed.unnamed.iter(), change_field)
                         }
-                        syn::Fields::Unit => {
-                            quote! {
-                                #type_name::#variant_name => #desc_name::#variant_name
-                            }
+                        syn::Fields::Unit => Vec::new(),
+                    };
+                    syn::Data::Enum(syn::DataEnum {
+                        variants: FromIterator::from_iter(variants),
+                        enum_token: Default::default(),
+                        brace_token: Default::default(),
+                    })
+                } else {
+                    // A singleton struct is handled differently, since the
+                    // only change that could occur is in the single field, we
+                    // only need to store that change data, rather than the
+                    // varying combinations that could occur in the case of
+                    // multiple fields.
+                    map_on_types_of_fields_over_data(data, |ty| Self::assoc_type(ty, "Change"))
+                }
+            }
+            syn::Data::Enum(_en) => {
+                panic!("delta_derive::generate_change_type not implemented for enums")
+            }
+            syn::Data::Union(_un) => {
+                panic!("delta_derive::generate_change_type not implemented for unions")
+            }
+        }
+    }
+
+    fn generate_delta_body(change_name: &syn::Ident, data: &syn::Data) -> TokenStream {
+        match data {
+            syn::Data::Struct(st) => {
+                let inspect_field =
+                    |index: usize, field: &syn::Field| -> (TokenStream, syn::Ident) {
+                        if let Some(name) = field.ident.as_ref() {
+                            (
+                                quote!(#name),
+                                syn::Ident::new(
+                                    &name.to_string().to_case(Case::Pascal),
+                                    Span::call_site(),
+                                ),
+                            )
+                        } else {
+                            (
+                                {
+                                    let idx = syn::Index::from(index);
+                                    quote!(#idx)
+                                },
+                                format_ident!("Field{}", index),
+                            )
+                        }
+                    };
+                let (field_names, field_variants): (Vec<TokenStream>, Vec<syn::Ident>) =
+                    match &st.fields {
+                        syn::Fields::Named(named) => map_fields(named.named.iter(), inspect_field)
+                            .into_iter()
+                            .unzip(),
+                        syn::Fields::Unnamed(unnamed) => {
+                            map_fields(unnamed.unnamed.iter(), inspect_field)
+                                .into_iter()
+                                .unzip()
+                        }
+                        syn::Fields::Unit => (Vec::new(), Vec::new()),
+                    };
+                if Self::is_struct_with_many_fields(data) {
+                    quote! {
+                        let changes: Vec<#change_name> = vec![
+                            #(self.#field_names.delta(&other.#field_names).map(#change_name::#field_variants)),*
+                        ]
+                            .into_iter()
+                            .flatten()
+                            .collect();
+                        if changes.is_empty() {
+                            delta::Changed::Unchanged
+                        } else {
+                            delta::Changed::Changed(changes)
                         }
                     }
-                });
-                quote! {
-                    match self {
-                        #(#cases),*
+                } else {
+                    quote! {
+                        #(self.#field_names.delta(&other.#field_names).map(#change_name))*
                     }
                 }
+            }
+            syn::Data::Enum(_en) => {
+                panic!("delta_derive::generate_delta_body not implemented for enums")
             }
             syn::Data::Union(_un) => {
                 panic!("delta_derive::generate_match_on_data not implemented for unions")
@@ -361,90 +377,16 @@ impl Definition {
         }
     }
 
-    /*
-        fn generate_is_unchanged_body(
-            type_name: &syn::Ident,
-            desc_name: &syn::Ident,
-            data: &syn::Data,
-        ) -> TokenStream {
-            match data {
-                syn::Data::Struct(st) => match &st.fields {
-                    syn::Fields::Named(named) => {
-                        let field_names = map_fields(named.named.iter(), |_, field| {
-                            field
-                                .ident
-                                .as_ref()
-                                .expect("Found unnamed field in named struct")
-                                .clone()
-                        });
-                        quote! {
-                            #desc_name {
-                                #(#field_names: self.#field_names.describe()),*
-                            }
-                        }
-                    }
-                    syn::Fields::Unnamed(unnamed) => {
-                        let field_indices =
-                            map_fields(unnamed.unnamed.iter(), |index, _| syn::Index::from(index));
-                        quote! {
-                            #desc_name(#(self.#field_indices.describe()),*)
-                        }
-                    }
-                    syn::Fields::Unit => {
-                        quote! {}
-                    }
-                },
-                syn::Data::Enum(en) => {
-                    let cases = map_variants(en.variants.iter(), |variant| {
-                        let variant_name = &variant.ident;
-                        match &variant.fields {
-                            syn::Fields::Named(named) => {
-                                let (field_indices, field_names): (Vec<syn::Index>, Vec<syn::Ident>) =
-                                    map_fields(named.named.iter(), |index, field| {
-                                        (
-                                            syn::Index::from(index),
-                                            field
-                                                .ident
-                                                .as_ref()
-                                                .expect("Found unnamed field in named struct")
-                                                .clone(),
-                                        )
-                                    })
-                                    .into_iter()
-                                    .unzip();
-                                quote! {
-                                    #type_name::#variant_name { #(#field_names: var#field_indices),* } =>
-                                    #desc_name::#variant_name { #(#field_names: var#field_indices.describe()),* }
-                                }
-                            }
-                            syn::Fields::Unnamed(unnamed) => {
-                                let field_indices = map_fields(unnamed.unnamed.iter(), |index, _| {
-                                    syn::Index::from(index)
-                                });
-                                quote! {
-                                    #type_name::#variant_name(#(var#field_indices),*) =>
-                                    #desc_name::#variant_name(#(var#field_indices.describe()),*)
-                                }
-                            }
-                            syn::Fields::Unit => {
-                                quote! {
-                                    #type_name::#variant_name => #desc_name::#variant_name
-                                }
-                            }
-                        }
-                    });
-                    quote! {
-                        match self {
-                            #(#cases),*
-                        }
-                    }
-                }
-                syn::Data::Union(_un) => {
-                    panic!("delta_derive::generate_match_on_data not implemented for unions")
-                }
-            }
+    fn is_struct_with_many_fields(data: &syn::Data) -> bool {
+        match data {
+            syn::Data::Struct(st) => match &st.fields {
+                syn::Fields::Named(named) => named.named.len() > 1,
+                syn::Fields::Unnamed(unnamed) => unnamed.unnamed.len() > 1,
+                syn::Fields::Unit => false,
+            },
+            _ => false,
         }
-    */
+    }
 
     fn generate_type_definition(
         visibility: &syn::Visibility,
@@ -535,15 +477,8 @@ impl Definition {
 
 impl quote::ToTokens for Definition {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Definition {
-            ty: _,
-            definition,
-            method_body: _,
-            impl_section,
-        } = self;
-        *tokens = quote! {
-            #definition
-            #impl_section
+        if let Some(body) = &self.definition {
+            *tokens = quote!(#body);
         }
     }
 }
@@ -597,6 +532,10 @@ impl Outputs {
                 .map(|c| &c.method_body)
                 .unwrap_or(&quote!(delta::Changed::Unchanged)),
         );
+        #[allow(unused_variables)] // compiler doesn't see the use of x
+        let desc = desc.map(|x| quote!(#x)).unwrap_or(quote!());
+        #[allow(unused_variables)] // compiler doesn't see the use of x
+        let change = change.map(|x| quote!(#x)).unwrap_or(quote!());
         quote! {
             #desc
             #change
@@ -641,8 +580,12 @@ impl<'a> Inputs<'a> {
 
     fn process_struct_single_field(&self, _field: &syn::Field) -> Outputs {
         Outputs {
-            desc: Some(Definition::generate_desc_from_data(self)),
-            change: None,
+            desc: if self.attrs.no_description {
+                None
+            } else {
+                Some(Definition::generate_desc_from_data(self))
+            },
+            change: Some(Definition::generate_change_from_data(self)),
         }
     }
 
@@ -650,14 +593,28 @@ impl<'a> Inputs<'a> {
         &self,
         _fields: impl IntoIterator<Item = &'a syn::Field>,
     ) -> Outputs {
-        panic!("NYI")
+        Outputs {
+            desc: if self.attrs.no_description {
+                None
+            } else {
+                Some(Definition::generate_desc_from_data(self))
+            },
+            change: Some(Definition::generate_change_from_data(self)),
+        }
     }
 
     fn process_struct_named_fields(
         &self,
         _fields: impl IntoIterator<Item = &'a syn::Field>,
     ) -> Outputs {
-        panic!("NYI")
+        Outputs {
+            desc: if self.attrs.no_description {
+                None
+            } else {
+                Some(Definition::generate_desc_from_data(self))
+            },
+            change: Some(Definition::generate_change_from_data(self)),
+        }
     }
 
     fn process_enum_single_variant(&self, _variant: &syn::Variant) -> Outputs {
@@ -755,16 +712,6 @@ fn map_field_types<'a>(
         .flatten()
         .collect()
 }
-
-/*
-fn map_over_fields<R>(fields: &syn::Fields, f: impl Fn(usize, &syn::Field) -> R) -> Vec<R> {
-    match fields {
-        syn::Fields::Named(named) => map_fields(named.named.iter(), f),
-        syn::Fields::Unnamed(unnamed) => map_fields(unnamed.unnamed.iter(), f),
-        syn::Fields::Unit => Vec::new(),
-    }
-}
-*/
 
 fn map_fields<'a, R>(
     fields: impl IntoIterator<Item = &'a syn::Field>,
@@ -884,7 +831,6 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
     let mut desc_innards = Vec::<TokenStream>::new();
     let mut match_innards = Vec::<TokenStream>::new();
     let mut change_innards = Vec::<TokenStream>::new();
-    let mut is_unchanged_innards = Vec::<TokenStream>::new();
     let mut delta_innards = Vec::<TokenStream>::new();
 
     for variant in en.variants.iter() {
@@ -960,22 +906,13 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                             }
                     });
 
-                    is_unchanged_innards.push(quote! {
-                        #change_name::#vname { #(#idents: #self_vars),* } =>
-                            vec![#(#self_vars.is_unchanged()),*].into_iter().all(std::convert::identity)
-                    });
-
                     delta_innards.push(quote! {
                         (#type_name::#vname { #(#idents: #self_vars),* },
                          #type_name::#vname { #(#idents: #other_vars),* }) => {
                             let change = #change_name::#vname {
                                 #(#idents: #self_vars.delta(&#other_vars)),*
                             };
-                            if change.is_unchanged() {
-                                delta::Changed::Unchanged
-                            } else {
-                                delta::Changed::Changed(delta::EnumChange::SameVariant(change))
-                            }
+                            delta::Changed::Changed(delta::EnumChange::SameVariant(change))
                         }
                     });
                 }
@@ -1023,20 +960,11 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                             #desc_name::#vname(#(#self_vars.describe()),*)
                     });
 
-                    is_unchanged_innards.push(quote! {
-                        #change_name::#vname(#(#self_vars),*) =>
-                            vec![#(#self_vars.is_unchanged()),*].into_iter().all(std::convert::identity)
-                    });
-
                     delta_innards.push(quote! {
                         (#type_name::#vname(#(#self_vars),*),
                          #type_name::#vname(#(#other_vars),*)) => {
                             let change = #change_name::#vname(#(#self_vars.delta(&#other_vars)),*);
-                            if change.is_unchanged() {
-                                delta::Changed::Unchanged
-                            } else {
-                                delta::Changed::Changed(delta::EnumChange::SameVariant(change))
-                            }
+                            delta::Changed::Changed(delta::EnumChange::SameVariant(change))
                         }
                     });
                 }
@@ -1044,9 +972,6 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
                     desc_innards.push(quote!(#vname));
                     change_innards.push(quote!(#vname));
                     match_innards.push(quote!(#type_name::#vname => #desc_name::#vname));
-                    is_unchanged_innards.push(quote!(
-                        #change_name::#vname => true
-                    ));
                     delta_innards.push(
                         quote!((#type_name::#vname, #type_name::#vname) => delta::Changed::Unchanged),
                     );
@@ -1083,15 +1008,6 @@ fn process_enum(attrs: &Attributes, en: &syn::DataEnum) -> TokenStream {
     let gen = quote! {
         #desc_struct
         #change_struct
-
-        impl #change_name {
-            #visibility fn is_unchanged(&self) -> bool {
-                match self {
-                    #(#is_unchanged_innards),*
-                }
-            }
-        }
-
         #delta_impl
     };
     gen.into()
