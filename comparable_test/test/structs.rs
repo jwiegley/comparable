@@ -65,20 +65,13 @@ fn test_struct_2_unnamed_fields_scalar() {
 }
 
 #[test]
-fn test_struct_1_named_field_ignored() {
+fn test_struct_1_unnamed_field_ignored() {
     #[derive(Comparable)]
-    pub struct ScalarVec {
-        #[comparable_ignore]
-        pub some_ints: Vec<u8>,
-    }
+    pub struct ScalarVec(#[comparable_ignore] pub Vec<u8>);
 
     assert_changes(
-        &ScalarVec {
-            some_ints: Vec::new(),
-        },
-        &ScalarVec {
-            some_ints: Vec::new(),
-        },
+        &ScalarVec(Vec::new()),
+        &ScalarVec(Vec::new()),
         Changed::Unchanged,
     );
 }
@@ -139,5 +132,24 @@ fn test_struct_2_named_fields_scalar() {
             ScalarNamedFieldsChange::SomeInt(I32Change(100, 200)),
             ScalarNamedFieldsChange::SomeUlong(U64Change(200, 300)),
         ]),
+    );
+}
+
+#[test]
+fn test_struct_1_named_field_ignored() {
+    #[derive(Comparable)]
+    pub struct ScalarVec {
+        #[comparable_ignore]
+        pub some_ints: Vec<u8>,
+    }
+
+    assert_changes(
+        &ScalarVec {
+            some_ints: Vec::new(),
+        },
+        &ScalarVec {
+            some_ints: Vec::new(),
+        },
+        Changed::Unchanged,
     );
 }
