@@ -321,21 +321,14 @@ impl VariantDetails {
 
 #[derive(Clone)]
 pub struct EnumDetails {
-    variants: HashMap<syn::Ident, VariantDetails>,
+    variants: Vec<VariantDetails>,
 }
 
 impl EnumDetails {
     pub fn from(type_name: &syn::Ident, change_name: &syn::Ident, en: &syn::DataEnum) -> Self {
         EnumDetails {
             variants: map_variants(en.variants.iter(), |variant| {
-                (
-                    variant.ident.clone(),
-                    VariantDetails::from(variant).derive_match_branch(
-                        type_name,
-                        change_name,
-                        variant,
-                    ),
-                )
+                VariantDetails::from(variant).derive_match_branch(type_name, change_name, variant)
             })
             .into_iter()
             .collect(),
@@ -344,8 +337,7 @@ impl EnumDetails {
 
     fn match_branches(&self) -> Vec<TokenStream> {
         self.variants
-            .values()
-            .into_iter()
+            .iter()
             .map(|d| d.match_branch.clone())
             .collect()
     }
