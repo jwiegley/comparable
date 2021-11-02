@@ -1,0 +1,58 @@
+#[doc(hidden)]
+pub mod boxes;
+#[doc(hidden)]
+pub mod empty;
+#[doc(hidden)]
+pub mod map;
+#[doc(hidden)]
+pub mod opt;
+#[doc(hidden)]
+pub mod scalar;
+#[doc(hidden)]
+pub mod set;
+#[doc(hidden)]
+pub mod string;
+#[doc(hidden)]
+pub mod types;
+
+#[doc(hidden)]
+pub use crate::boxes::*;
+#[doc(hidden)]
+pub use crate::map::*;
+#[doc(hidden)]
+pub use crate::opt::*;
+#[doc(hidden)]
+pub use crate::scalar::*;
+#[doc(hidden)]
+pub use crate::set::*;
+#[doc(hidden)]
+pub use crate::string::*;
+
+pub use crate::types::{Changed, Comparable};
+
+/// Assert that two values of a type have either not changed, or they have
+/// changed only to the extent described by the give change set. This allows
+/// tests to confirm that what they expected to see happened, and anything
+/// they didn't expect to see in fact did not happen.
+///
+/// This function is just a wrapper around `pretty_assertions::assert_eq!`
+/// and does the following:
+/// ```ignore
+/// pretty_assertions::assert_eq!(expected, left.comparison(right))
+/// ```
+pub fn assert_changes<T: Comparable>(
+    left: &T,
+    right: &T,
+    expected: Changed<<T as Comparable>::Change>,
+) {
+    pretty_assertions::assert_eq!(expected, left.comparison(right))
+}
+
+// Re-export #[derive(Comparable)].
+//
+// The reason re-exporting is not enabled by default is that disabling it would
+// be annoying for crates that provide handwritten impls or data formats. They
+// would need to disable default features and then explicitly re-enable std.
+#[cfg(feature = "comparable_derive")]
+#[doc(hidden)]
+pub use comparable_derive::*;

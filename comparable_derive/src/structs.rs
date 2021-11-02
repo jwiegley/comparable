@@ -37,51 +37,56 @@ pub fn generate_describe_body_for_structs(
     }
 }
 
-pub fn create_change_type_for_structs(st: &syn::DataStruct) -> syn::Data {
-    if is_datastruct_with_many_fields(st) {
-        let change_field = |index: usize, field: &syn::Field| -> syn::Variant {
-            let ident: syn::Ident = if let Some(name) = field.ident.as_ref() {
-                syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site())
-            } else {
-                format_ident!("Field{}", index)
+pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data> {
+    // Produce a vec that takes ignore fields into account.
+    match field_count(st.fields.iter()) {
+        0 => None,
+        1 => {
+            // A singleton struct is handled differently, since the only change
+            // that could occur is in the single field, we only need to store that
+            // change data, rather than the varying combinations that could occur
+            // in the case of multiple fields.
+            Some(map_on_fields_over_datastruct(st, |_, field| syn::Field {
+                ty: Definition::assoc_type(&field.ty, "Change"),
+                ..field.clone()
+            }))
+        }
+        _ => {
+            let change_field = |index: usize, field: &syn::Field| -> syn::Variant {
+                let ident: syn::Ident = if let Some(name) = field.ident.as_ref() {
+                    syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site())
+                } else {
+                    format_ident!("Field{}", index)
+                };
+                syn::Variant {
+                    ident,
+                    fields: syn::Fields::Unnamed(syn::FieldsUnnamed {
+                        unnamed: FromIterator::from_iter(vec![syn::Field {
+                            ty: Definition::assoc_type(&field.ty, "Change"),
+                            attrs: Default::default(),
+                            vis: syn::Visibility::Inherited,
+                            ident: Default::default(),
+                            colon_token: Default::default(),
+                        }]),
+                        paren_token: Default::default(),
+                    }),
+                    attrs: Default::default(),
+                    discriminant: Default::default(),
+                }
             };
-            syn::Variant {
-                ident,
-                fields: syn::Fields::Unnamed(syn::FieldsUnnamed {
-                    unnamed: FromIterator::from_iter(vec![syn::Field {
-                        ty: Definition::assoc_type(&field.ty, "Change"),
-                        attrs: Default::default(),
-                        vis: syn::Visibility::Inherited,
-                        ident: Default::default(),
-                        colon_token: Default::default(),
-                    }]),
-                    paren_token: Default::default(),
-                }),
-                attrs: Default::default(),
-                discriminant: Default::default(),
-            }
-        };
 
-        let variants = match &st.fields {
-            syn::Fields::Named(named) => map_fields(named.named.iter(), change_field),
-            syn::Fields::Unnamed(unnamed) => map_fields(unnamed.unnamed.iter(), change_field),
-            syn::Fields::Unit => Vec::new(),
-        };
+            let variants = match &st.fields {
+                syn::Fields::Named(named) => map_fields(named.named.iter(), change_field),
+                syn::Fields::Unnamed(unnamed) => map_fields(unnamed.unnamed.iter(), change_field),
+                syn::Fields::Unit => Vec::new(),
+            };
 
-        syn::Data::Enum(syn::DataEnum {
-            variants: FromIterator::from_iter(variants),
-            enum_token: Default::default(),
-            brace_token: Default::default(),
-        })
-    } else {
-        // A singleton struct is handled differently, since the only change
-        // that could occur is in the single field, we only need to store that
-        // change data, rather than the varying combinations that could occur
-        // in the case of multiple fields.
-        map_on_fields_over_datastruct(st, |_, field| syn::Field {
-            ty: Definition::assoc_type(&field.ty, "Change"),
-            ..field.clone()
-        })
+            Some(syn::Data::Enum(syn::DataEnum {
+                variants: FromIterator::from_iter(variants),
+                enum_token: Default::default(),
+                brace_token: Default::default(),
+            }))
+        }
     }
 }
 
@@ -89,39 +94,42 @@ pub fn generate_comparison_body_for_structs(
     change_name: &syn::Ident,
     st: &syn::DataStruct,
 ) -> TokenStream {
-    let inspect_field = |index: usize, field: &syn::Field| -> (TokenStream, syn::Ident) {
-        let idx = syn::Index::from(index);
-        if let Some(name) = field.ident.as_ref() {
-            (
-                quote!(#name),
-                syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site()),
-            )
-        } else {
-            (quote!(#idx), format_ident!("Field{}", index))
-        }
-    };
-
-    let (field_names, field_variants): (Vec<TokenStream>, Vec<syn::Ident>) = match &st.fields {
-        syn::Fields::Named(named) => map_fields(named.named.iter(), inspect_field)
-            .into_iter()
-            .unzip(),
-        syn::Fields::Unnamed(unnamed) => map_fields(unnamed.unnamed.iter(), inspect_field)
-            .into_iter()
-            .unzip(),
-        syn::Fields::Unit => (Vec::new(), Vec::new()),
-    };
+    let (field_names, field_variants): (Vec<TokenStream>, Vec<syn::Ident>) = map_fields(
+        st.fields.iter(),
+        |index: usize, field: &syn::Field| -> (TokenStream, syn::Ident) {
+            let idx = syn::Index::from(index);
+            if let Some(name) = field.ident.as_ref() {
+                (
+                    quote!(#name),
+                    syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site()),
+                )
+            } else {
+                (quote!(#idx), format_ident!("Field{}", index))
+            }
+        },
+    )
+    .into_iter()
+    .unzip();
 
     if field_names.is_empty() {
         quote!(comparable::Changed::Unchanged)
     } else if field_names.len() == 1 {
-        quote! {
-            #(self.#field_names.comparison(&other.#field_names).map(#change_name))*
+        if let syn::Fields::Unnamed(_) = st.fields {
+            quote! {
+                #(self.#field_names.comparison(&other.#field_names)
+                  .map(#change_name))*
+            }
+        } else {
+            quote! {
+                #(self.#field_names.comparison(&other.#field_names)
+                  .map(|x| #change_name { #field_names: x }))*
+            }
         }
     } else {
         quote! {
             let changes: Vec<#change_name> = vec![
                 #(self.#field_names.comparison(&other.#field_names)
-                      .map(#change_name::#field_variants)),*
+                  .map(#change_name::#field_variants)),*
             ]
                 .into_iter()
                 .flatten()

@@ -24,21 +24,6 @@ pub fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a 
     attrs.iter().find(|attr| attr.path.is_ident(attr_name))
 }
 
-pub fn is_datastruct_with_many_fields(st: &syn::DataStruct) -> bool {
-    match &st.fields {
-        syn::Fields::Named(named) => named.named.len() > 1,
-        syn::Fields::Unnamed(unnamed) => unnamed.unnamed.len() > 1,
-        syn::Fields::Unit => false,
-    }
-}
-
-pub fn is_struct_with_many_fields(data: &syn::Data) -> bool {
-    match data {
-        syn::Data::Struct(st) => is_datastruct_with_many_fields(st),
-        _ => false,
-    }
-}
-
 #[allow(dead_code)]
 pub fn data_from_variant(variant: &syn::Variant) -> syn::Data {
     syn::Data::Struct(syn::DataStruct {
@@ -124,6 +109,10 @@ pub fn map_fields<'a, R>(
         })
         .flatten()
         .collect()
+}
+
+pub fn field_count<'a>(fields: impl IntoIterator<Item = &'a syn::Field>) -> usize {
+    map_fields(fields, |_, _| ()).len()
 }
 
 pub fn map_variants<'a, R>(

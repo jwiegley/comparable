@@ -7,7 +7,7 @@ use crate::structs::*;
 use crate::utils::*;
 
 pub struct Definition {
-    pub ty: syn::Type,
+    pub ty: Option<syn::Type>,
     pub definition: Option<TokenStream>,
     // For `Desc` types, the method body is for `describe`.
     // For `Change` types, the method body is for `comparison`.
@@ -49,19 +49,21 @@ impl Definition {
             }),
         );
         Self {
-            ty: inputs
-                .attrs
-                .describe_type
-                .as_ref()
-                .unwrap_or(
-                    &syn::parse2(if inputs.attrs.compare_default {
-                        quote!(Self::Change)
-                    } else {
-                        quote!(#desc_name)
-                    })
-                    .expect("Failed to parse Desc type name"),
-                )
-                .clone(),
+            ty: Some(
+                inputs
+                    .attrs
+                    .describe_type
+                    .as_ref()
+                    .unwrap_or(
+                        &syn::parse2(if inputs.attrs.compare_default {
+                            quote!(Self::Change)
+                        } else {
+                            quote!(#desc_name)
+                        })
+                        .expect("Failed to parse Desc type name"),
+                    )
+                    .clone(),
+            ),
             definition: if inputs.attrs.describe_type.is_some() || inputs.attrs.compare_default {
                 None
             } else {
@@ -110,19 +112,25 @@ impl Definition {
     pub fn generate_change_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
         let change_name = format_ident!("{}Change", type_name);
-        let change_type = generate_type_definition(
-            &inputs.visibility,
-            &change_name,
-            &Self::create_change_type(&inputs.input.ident, &inputs.input.data),
-        );
+        let change_type = Self::create_change_type(&inputs.input.ident, &inputs.input.data)
+            .map(|ty| generate_type_definition(&inputs.visibility, &change_name, &ty));
+        let definition = change_type.as_ref().map(|ty| quote!(#ty));
         Self {
-            ty: syn::parse2(if is_struct_with_many_fields(&inputs.input.data) {
-                quote!(Vec<#change_name>)
-            } else {
-                quote!(#change_name)
-            })
-            .expect("Failed to parse Change type name"),
-            definition: Some(quote!(#change_type)),
+            ty: change_type
+                .map(|_| {
+                    (if let syn::Data::Struct(st) = &inputs.input.data {
+                        match field_count(st.fields.iter()) {
+                            0 => None,
+                            1 => Some(quote!(#change_name)),
+                            _ => Some(quote!(Vec<#change_name>)),
+                        }
+                    } else {
+                        Some(quote!(#change_name))
+                    })
+                    .map(|ty| syn::parse2(ty).expect("Failed to parse Change type name"))
+                })
+                .flatten(),
+            definition,
             method_body: Self::generate_comparison_method_body(
                 type_name,
                 &change_name,
@@ -131,10 +139,10 @@ impl Definition {
         }
     }
 
-    fn create_change_type(type_name: &syn::Ident, data: &syn::Data) -> syn::Data {
+    fn create_change_type(type_name: &syn::Ident, data: &syn::Data) -> Option<syn::Data> {
         match data {
             syn::Data::Struct(st) => create_change_type_for_structs(st),
-            syn::Data::Enum(en) => create_change_type_for_enums(type_name, en),
+            syn::Data::Enum(en) => Some(create_change_type_for_enums(type_name, en)),
             syn::Data::Union(_un) => {
                 panic!("comparable_derive::generate_change_type not implemented for unions")
             }

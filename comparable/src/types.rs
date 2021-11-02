@@ -74,26 +74,26 @@ impl<T> Iterator for Changed<T> {
     }
 }
 
-#[derive(
-    PartialEq,
-    Debug, // , serde::Serialize, serde::Deserialize
-)]
-pub enum EnumChange<Desc, Change> {
-    SameVariant(Change),
-    DiffVariant(Desc, Desc),
-}
-
 pub trait Comparable {
-    /// A type that describes the type under consideration. For many types
-    /// this is just the type itself, but some large structures are better
-    /// described by a comparison from the Default, for exmaple.
+    /// Describes the type under consideration. For types that use
+    /// `#[derive(Comparable)]` this is a mirror of the type itself, where all
+    /// field types refer to the `Comparable::Desc` associated type of the
+    /// original type.
     type Desc: PartialEq + Debug;
 
+    /// Describe a value of a type.
     fn describe(&self) -> Self::Desc;
 
-    /// A type that describes the changes between to values of a type.
+    /// Reflects all changes between two values of a type. The exact nature of
+    /// this type depends on the type being compared, for example, singleton
+    /// struts vary from structs with multiple fields. Please see the [full
+    /// documentation](https://docs.rs/comparable) for more details.
     type Change: PartialEq + Debug;
 
+    /// Compare two values of a type, reporting whether they differ and what
+    /// the complete set of differences looks like. This is used by the
+    /// `comparable::assert_changes` function so that tests can ensure that
+    /// what was expected to happen did happen -- and nothing more.
     fn comparison(&self, other: &Self) -> Changed<Self::Change>;
 }
 

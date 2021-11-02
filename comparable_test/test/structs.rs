@@ -67,11 +67,31 @@ fn test_struct_2_unnamed_fields_scalar() {
 #[test]
 fn test_struct_1_unnamed_field_ignored() {
     #[derive(Comparable)]
-    pub struct ScalarVec(#[comparable_ignore] pub Vec<u8>);
+    pub struct ScalarUnnamedVecIgnored(#[comparable_ignore] pub Vec<u8>);
 
     assert_changes(
-        &ScalarVec(Vec::new()),
-        &ScalarVec(Vec::new()),
+        &ScalarUnnamedVecIgnored(Vec::new()),
+        &ScalarUnnamedVecIgnored(Vec::new()),
+        Changed::Unchanged,
+    );
+}
+
+#[test]
+fn test_struct_1_unnamed_field_ignored_with_attrs() {
+    #[derive(Comparable)]
+    #[describe_type(String)]
+    #[describe_body(self.to_string())]
+    pub struct ScalarUnnamedVecIgnored(#[comparable_ignore] pub Vec<u8>);
+
+    impl ToString for ScalarUnnamedVecIgnored {
+        fn to_string(&self) -> String {
+            "it's a vector".to_string()
+        }
+    }
+
+    assert_changes(
+        &ScalarUnnamedVecIgnored(Vec::new()),
+        &ScalarUnnamedVecIgnored(Vec::new()),
         Changed::Unchanged,
     );
 }
@@ -138,16 +158,34 @@ fn test_struct_2_named_fields_scalar() {
 #[test]
 fn test_struct_1_named_field_ignored() {
     #[derive(Comparable)]
-    pub struct ScalarVec {
+    pub struct ScalarNamedVecIgnored {
         #[comparable_ignore]
         pub some_ints: Vec<u8>,
     }
 
     assert_changes(
-        &ScalarVec {
+        &ScalarNamedVecIgnored {
             some_ints: Vec::new(),
         },
-        &ScalarVec {
+        &ScalarNamedVecIgnored {
+            some_ints: Vec::new(),
+        },
+        Changed::Unchanged,
+    );
+}
+
+#[test]
+fn test_struct_1_named_field_not_ignored() {
+    #[derive(Comparable)]
+    pub struct ScalarNamedVecNotIgnored {
+        pub some_ints: Vec<u8>,
+    }
+
+    assert_changes(
+        &ScalarNamedVecNotIgnored {
+            some_ints: Vec::new(),
+        },
+        &ScalarNamedVecNotIgnored {
             some_ints: Vec::new(),
         },
         Changed::Unchanged,

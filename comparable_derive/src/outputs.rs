@@ -16,9 +16,14 @@ impl Outputs {
 
         let impl_comparable = Self::impl_comparable(
             &inputs.input.ident,
-            desc.as_ref().map(|d| &d.ty).unwrap_or(&unit_type()),
+            desc.as_ref()
+                .and_then(|d| d.ty.as_ref())
+                .unwrap_or(&unit_type()),
             desc.as_ref().map(|d| &d.method_body).unwrap_or(&quote!()),
-            change.as_ref().map(|c| &c.ty).unwrap_or(&unit_type()),
+            change
+                .as_ref()
+                .and_then(|c| c.ty.as_ref())
+                .unwrap_or(&unit_type()),
             change
                 .as_ref()
                 .map(|c| &c.method_body)
