@@ -98,10 +98,86 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
                     fields: syn::Fields::Unnamed({
                         let desc_field = syn::Field {
                             ident: None,
-                            ty: Definition::assoc_type(
-                                &Definition::ident_to_type(type_name),
-                                "Desc",
-                            ),
+                            ty: Definition::assoc_type(&ident_to_type(type_name), "Desc"),
+                            attrs: Default::default(),
+                            vis: syn::Visibility::Inherited,
+                            colon_token: Default::default(),
+                        };
+                        syn::FieldsUnnamed {
+                            unnamed: FromIterator::from_iter(vec![desc_field.clone(), desc_field]),
+                            paren_token: Default::default(),
+                        }
+                    }),
+                    attrs: Default::default(),
+                    discriminant: Default::default(),
+                }]
+            }),
+        ),
+        ..*en
+    })
+}
+
+pub fn _create_change_type_for_enums_with_helpers(
+    type_name: &syn::Ident,
+    en: &syn::DataEnum,
+) -> syn::Data {
+    let mut helper_structs: HashMap<syn::Ident, syn::Data> = HashMap::new();
+    syn::Data::Enum(syn::DataEnum {
+        variants: FromIterator::from_iter(
+            map_variants(en.variants.iter(), move |variant| {
+                if variant.fields.is_empty() {
+                    None
+                } else {
+                    let apply_change_to_field = |_, field: &syn::Field| syn::Field {
+                        ty: Definition::assoc_type(&field.ty, "Change"),
+                        ..field.clone()
+                    };
+                    Some(syn::Variant {
+                        ident: format_ident!("Both{}", &variant.ident),
+                        fields: {
+                            if variant.fields.len() == 1 {
+                                // A map isn't needed, but it fits the pattern
+                                map_on_fields(&variant.fields, apply_change_to_field)
+                            } else {
+                                let fields_change_struct = map_on_fields_over_data(
+                                    &data_from_variant(variant),
+                                    apply_change_to_field,
+                                );
+                                let fields_change_name =
+                                    format_ident!("{}{}Change", type_name, &variant.ident);
+                                helper_structs
+                                    .insert(fields_change_name.clone(), fields_change_struct);
+                                syn::Fields::Unnamed(syn::FieldsUnnamed {
+                                    unnamed: FromIterator::from_iter(
+                                        vec![syn::Field {
+                                            ident: None,
+                                            ty: vec_type(&ident_to_type(&fields_change_name)),
+                                            attrs: Default::default(),
+                                            vis: syn::Visibility::Inherited,
+                                            colon_token: Default::default(),
+                                        }]
+                                        .into_iter(),
+                                    ),
+                                    paren_token: Default::default(),
+                                })
+                            }
+                        },
+                        ..variant.clone()
+                    })
+                }
+            })
+            .into_iter()
+            .flatten()
+            .into_iter()
+            .chain(if en.variants.len() < 2 {
+                vec![]
+            } else {
+                vec![syn::Variant {
+                    ident: format_ident!("Different"),
+                    fields: syn::Fields::Unnamed({
+                        let desc_field = syn::Field {
+                            ident: None,
+                            ty: Definition::assoc_type(&ident_to_type(type_name), "Desc"),
                             attrs: Default::default(),
                             vis: syn::Visibility::Inherited,
                             colon_token: Default::default(),

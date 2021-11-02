@@ -23,10 +23,6 @@ impl quote::ToTokens for Definition {
 }
 
 impl Definition {
-    pub fn ident_to_type(ident: &syn::Ident) -> syn::Type {
-        syn::parse2(quote!(#ident)).unwrap_or_else(|_| panic!("Failed to parse type"))
-    }
-
     pub fn assoc_type(ty: &syn::Type, name: &str) -> syn::Type {
         let ident = format_ident!("{}", name);
         syn::parse2(quote!(<#ty as comparable::Comparable>::#ident))

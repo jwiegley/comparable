@@ -11,6 +11,15 @@ pub fn unit_type() -> syn::Type {
     })
 }
 
+pub fn ident_to_type(ident: &syn::Ident) -> syn::Type {
+    syn::parse2(quote!(#ident)).unwrap_or_else(|_| panic!("Failed to parse type"))
+}
+
+#[allow(dead_code)]
+pub fn vec_type(ty: &syn::Type) -> syn::Type {
+    syn::parse2(quote!(Vec<#ty>)).unwrap_or_else(|_| panic!("Failed to parse Vec type"))
+}
+
 pub fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a syn::Attribute> {
     attrs.iter().find(|attr| attr.path.is_ident(attr_name))
 }
@@ -30,17 +39,18 @@ pub fn is_struct_with_many_fields(data: &syn::Data) -> bool {
     }
 }
 
-pub fn _variant_to_datastruct(variant: &syn::Variant) -> syn::DataStruct {
-    syn::DataStruct {
+#[allow(dead_code)]
+pub fn data_from_variant(variant: &syn::Variant) -> syn::Data {
+    syn::Data::Struct(syn::DataStruct {
         fields: variant.fields.clone(),
         struct_token: Default::default(),
         semi_token: Default::default(),
-    }
+    })
 }
 
 pub fn map_on_fields_over_data(
     data: &syn::Data,
-    f: impl Fn(usize, &syn::Field) -> syn::Field + Copy,
+    f: impl FnMut(usize, &syn::Field) -> syn::Field + Copy,
 ) -> syn::Data {
     match data {
         syn::Data::Struct(st) => map_on_fields_over_datastruct(st, f),
@@ -63,7 +73,7 @@ pub fn map_on_fields_over_data(
 
 pub fn map_on_fields_over_datastruct(
     st: &syn::DataStruct,
-    f: impl Fn(usize, &syn::Field) -> syn::Field,
+    f: impl FnMut(usize, &syn::Field) -> syn::Field,
 ) -> syn::Data {
     syn::Data::Struct(syn::DataStruct {
         fields: map_on_fields(&st.fields, f),
@@ -73,7 +83,7 @@ pub fn map_on_fields_over_datastruct(
 
 pub fn _map_on_variants_over_dataenum(
     en: &syn::DataEnum,
-    f: impl Fn(&syn::Variant) -> syn::Variant,
+    f: impl FnMut(&syn::Variant) -> syn::Variant,
 ) -> syn::Data {
     syn::Data::Enum(syn::DataEnum {
         variants: FromIterator::from_iter(map_variants(en.variants.iter(), f)),
@@ -83,7 +93,7 @@ pub fn _map_on_variants_over_dataenum(
 
 pub fn map_on_fields(
     fields: &syn::Fields,
-    f: impl Fn(usize, &syn::Field) -> syn::Field,
+    f: impl FnMut(usize, &syn::Field) -> syn::Field,
 ) -> syn::Fields {
     match fields {
         syn::Fields::Named(named) => syn::Fields::Named(syn::FieldsNamed {
@@ -100,7 +110,7 @@ pub fn map_on_fields(
 
 pub fn map_fields<'a, R>(
     fields: impl IntoIterator<Item = &'a syn::Field>,
-    f: impl Fn(usize, &'a syn::Field) -> R,
+    mut f: impl FnMut(usize, &'a syn::Field) -> R,
 ) -> Vec<R> {
     fields
         .into_iter()
@@ -118,7 +128,7 @@ pub fn map_fields<'a, R>(
 
 pub fn map_variants<'a, R>(
     variants: impl IntoIterator<Item = &'a syn::Variant>,
-    f: impl Fn(&syn::Variant) -> R,
+    mut f: impl FnMut(&syn::Variant) -> R,
 ) -> Vec<R> {
     variants
         .into_iter()
