@@ -320,31 +320,14 @@
 //! 
 //! This process can be influenced using several attribute macros.
 //! 
-//! #### `compare_default`
+//! ### `self_describing`
 //! 
-//! When the `#[compare_default]` attribute macro is used, the
-//! [`Comparable::Desc`] type is defined to be the same as the
-//! [`Comparable::Change`] type, with the [`Comparable::describe`] method being
-//! implemented as a comparison against the value of `Default::default()`:
+//! If the `self_describing` attribute is used, the [`Comparable::Desc`] type is
+//! set to be the type itself, and the [`Comparable::describe`] method return a
+//! clone of the value.
 //! 
-//! ```ignore
-//! # use comparable::*;
-//! impl comparable::Comparable for Foo {
-//!     type Desc = Self::Change;
-//! 
-//!     fn describe(&self) -> Self::Desc {
-//!         Foo::default().comparison(self).unwrap_or_default()
-//!     }
-//! 
-//!     type Change = Vec<FooChange>;
-//! 
-//!     /* ... */
-//! }
-//! ```
-//! 
-//! Note that changes for structures are always a vector, since this allows
-//! changes to be reported separately for each field. More on this in the
-//! following section.
+//! Note the following traits are required for self-describing types: `Clone`,
+//! `Debug` and `PartialEq`.
 //! 
 //! ### `no_description`
 //! 
@@ -408,6 +391,32 @@
 //! This same approach could be used to represent large blobs of data by their
 //! checksum hash, for example, or large data structures that you don't need to
 //! ever display by their Merkle root hash.
+//! 
+//! #### `compare_default`
+//! 
+//! When the `#[compare_default]` attribute macro is used, the
+//! [`Comparable::Desc`] type is defined to be the same as the
+//! [`Comparable::Change`] type, with the [`Comparable::describe`] method being
+//! implemented as a comparison against the value of `Default::default()`:
+//! 
+//! ```ignore
+//! # use comparable::*;
+//! impl comparable::Comparable for Foo {
+//!     type Desc = Self::Change;
+//! 
+//!     fn describe(&self) -> Self::Desc {
+//!         Foo::default().comparison(self).unwrap_or_default()
+//!     }
+//! 
+//!     type Change = Vec<FooChange>;
+//! 
+//!     /* ... */
+//! }
+//! ```
+//! 
+//! Note that changes for structures are always a vector, since this allows
+//! changes to be reported separately for each field. More on this in the
+//! following section.
 //! 
 //! ## Deriving Comparable for structs: the Change type
 //! 
