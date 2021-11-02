@@ -45,10 +45,7 @@ impl<'a> Inputs<'a> {
                 panic!("Comparable derivation not available for unions");
             }
         };
-        self.process_struct_or_enum(is_unitary)
-    }
 
-    fn process_struct_or_enum(&self, is_unitary: bool) -> Outputs {
         Outputs {
             desc: if self.attrs.no_description {
                 None
