@@ -1,5 +1,3 @@
-use proc_macro2::TokenStream;
-
 mod attrs;
 mod definition;
 mod enums;
@@ -22,8 +20,6 @@ mod utils;
 )]
 pub fn comparable_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
-    let inputs: crate::inputs::Inputs = crate::inputs::Inputs::from(&input);
-    let outputs: crate::outputs::Outputs = inputs.process_data();
-    let tokens: TokenStream = outputs.generate(&inputs);
-    tokens.into()
+    let inputs = crate::inputs::Inputs::from(&input);
+    inputs.process_data().generate(&inputs).into()
 }
