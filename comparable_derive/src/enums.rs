@@ -207,7 +207,7 @@ struct VariantDetails {
     fields_self_capture: TokenStream,
     fields_other_capture: TokenStream,
     fields_assignment: TokenStream,
-    match_branch: Option<TokenStream>,
+    match_branch: TokenStream,
 }
 
 impl VariantDetails {
@@ -308,13 +308,13 @@ impl VariantDetails {
         };
 
         let let_comparisons = fields.let_comparisons();
-        self.match_branch = Some(quote! {
+        self.match_branch = quote! {
             (#type_name::#variant_name #fields_self_capture,
              #type_name::#variant_name #fields_other_capture) => {
                 #(#let_comparisons)*
                 #return_result
             }
-        });
+        };
         self
     }
 }
@@ -346,7 +346,7 @@ impl EnumDetails {
         self.variants
             .values()
             .into_iter()
-            .map(|d| d.match_branch.as_ref().unwrap().clone())
+            .map(|d| d.match_branch.clone())
             .collect()
     }
 
