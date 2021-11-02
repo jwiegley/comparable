@@ -40,7 +40,11 @@ impl Definition {
     // NOTE: Never called if inputs.attrs.no_description is true.
     pub fn generate_desc_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
-        let desc_name = format_ident!("{}Desc", &inputs.input.ident);
+        let desc_name = format_ident!(
+            "{}{}",
+            &inputs.input.ident,
+            inputs.attrs.comparable_desc_suffix
+        );
         let desc_type = generate_type_definition(
             &inputs.visibility,
             &desc_name,
@@ -121,7 +125,7 @@ impl Definition {
     //
     pub fn generate_change_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
-        let change_name = format_ident!("{}Change", type_name);
+        let change_name = format_ident!("{}{}", type_name, inputs.attrs.comparable_change_suffix);
         let change_type = Self::create_change_type(&inputs.input.ident, &inputs.input.data)
             .map(|ty| generate_type_definition(&inputs.visibility, &change_name, &ty));
         let definition = change_type.as_ref().map(|ty| quote!(#ty));

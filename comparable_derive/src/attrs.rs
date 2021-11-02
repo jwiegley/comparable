@@ -1,3 +1,5 @@
+use quote::format_ident;
+
 use crate::utils::has_attr;
 
 pub struct Attributes {
@@ -8,6 +10,8 @@ pub struct Attributes {
     pub compare_default: bool,
     pub comparable_public: bool,
     pub comparable_private: bool,
+    pub comparable_desc_suffix: syn::Ident,
+    pub comparable_change_suffix: syn::Ident,
 }
 
 impl Attributes {
@@ -26,6 +30,18 @@ impl Attributes {
             compare_default: has_attr(attrs, "compare_default").is_some(),
             comparable_public: has_attr(attrs, "comparable_public").is_some(),
             comparable_private: has_attr(attrs, "comparable_private").is_some(),
+            comparable_desc_suffix: has_attr(attrs, "comparable_desc_suffix")
+                .map(|x| {
+                    x.parse_args::<syn::Ident>()
+                        .expect("Failed to parse \"comparable_desc_suffix\" attribute")
+                })
+                .unwrap_or_else(|| format_ident!("Desc")),
+            comparable_change_suffix: has_attr(attrs, "comparable_change_suffix")
+                .map(|x| {
+                    x.parse_args::<syn::Ident>()
+                        .expect("Failed to parse \"comparable_change_suffix\" attribute")
+                })
+                .unwrap_or_else(|| format_ident!("Change")),
         }
     }
 }

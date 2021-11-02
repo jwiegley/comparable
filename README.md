@@ -287,14 +287,6 @@ The first attribute macro you'll notice that can be applied to individual
 fields is `#[comparable_ignore]`, which must be used if the type in question
 cannot be compared for differences.
 
-**TODO**: jww (2021-11-01): Allow the [`Comparable::Desc`] and
-[`Comparable::Change`] suffixes to both be changed.
-
-**TODO**: jww (2021-11-01): Provide an attribute macro `#[comparable_wrap]`
-that defines a wrapping type that can be used for comparison. When the field
-is encountered during [`Comparable::comparison`], construct a temporary value
-using the wrapper and then call [`Comparable::comparison`] on that.
-
 **TODO**: jww (2021-11-01): Provide an attribute macro
 `#[comparable_view(function)]` for defining synthetic properties that receive
 `&self` as an argument and return a type implementing [`Comparable`] that can

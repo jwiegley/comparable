@@ -16,7 +16,9 @@ mod utils;
         compare_default,
         comparable_public,
         comparable_private,
-        comparable_ignore
+        comparable_ignore,
+        comparable_desc_suffix,
+        comparable_change_suffix,
     )
 )]
 pub fn comparable_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

@@ -208,3 +208,24 @@ fn test_struct_1_named_field_self_describing() {
         }),
     );
 }
+
+#[test]
+fn test_struct_1_named_field_comparable_change_suffix() {
+    #[derive(Comparable, Clone, PartialEq, Debug)]
+    #[comparable_change_suffix(Mutated)]
+    pub struct ScalarNamedVecNotIgnored {
+        pub some_ints: Vec<u8>,
+    }
+
+    assert_changes(
+        &ScalarNamedVecNotIgnored {
+            some_ints: vec![100],
+        },
+        &ScalarNamedVecNotIgnored {
+            some_ints: vec![200],
+        },
+        Changed(ScalarNamedVecNotIgnoredMutated {
+            some_ints: vec![VecChange::Changed(0, U8Change(100, 200))],
+        }),
+    );
+}

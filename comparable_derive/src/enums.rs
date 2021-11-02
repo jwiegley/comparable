@@ -124,6 +124,7 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
 // of fields.
 pub fn _create_change_type_for_enums_with_helpers(
     type_name: &syn::Ident,
+    change_suffix: &syn::Ident,
     en: &syn::DataEnum,
 ) -> syn::Data {
     let mut helper_structs: HashMap<syn::Ident, syn::Data> = HashMap::new();
@@ -148,8 +149,12 @@ pub fn _create_change_type_for_enums_with_helpers(
                                     &data_from_variant(variant),
                                     apply_change_to_field,
                                 );
-                                let fields_change_name =
-                                    format_ident!("{}{}Change", type_name, &variant.ident);
+                                let fields_change_name = format_ident!(
+                                    "{}{}{}",
+                                    type_name,
+                                    &variant.ident,
+                                    change_suffix
+                                );
                                 helper_structs
                                     .insert(fields_change_name.clone(), fields_change_struct);
                                 syn::Fields::Unnamed(syn::FieldsUnnamed {
