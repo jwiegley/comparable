@@ -117,6 +117,11 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
     })
 }
 
+// For each multi-field variant in an enum, the function below generates a
+// helper [`Comparable::Change`] struct and set that variant's type for the
+// enum's [`Comparable::Change`] to be `Vec<Change>`. However, we aren't using
+// it quite yet. It would only really be useful if most enum variants had lots
+// of fields.
 pub fn _create_change_type_for_enums_with_helpers(
     type_name: &syn::Ident,
     en: &syn::DataEnum,

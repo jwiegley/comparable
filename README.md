@@ -290,10 +290,6 @@ cannot be compared for differences.
 **TODO**: jww (2021-11-01): Allow the [`Comparable::Desc`] and
 [`Comparable::Change`] suffixes to both be changed.
 
-**TODO**: jww (2021-11-01): For each multi-field variant in an enum, generate
-a helper [`Comparable::Change`] struct and set that variant's type for the
-enum's [`Comparable::Change`] to be `Vec<Change>`.
-
 **TODO**: jww (2021-11-01): Provide an attribute macro `#[comparable_wrap]`
 that defines a wrapping type that can be used for comparison. When the field
 is encountered during [`Comparable::comparison`], construct a temporary value
