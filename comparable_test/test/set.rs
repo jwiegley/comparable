@@ -59,7 +59,6 @@ fn test_vec() {
     );
 }
 
-// jww (2021-10-31): Need to sort hashsets before comparison
 #[test]
 fn test_hashset() {
     assert_changes(&(vec![] as Vec<i32>), &vec![], Unchanged);
