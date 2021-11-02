@@ -3,14 +3,14 @@
 
 // use std::collections::{BTreeMap, HashMap, HashSet};
 
-use comparable::*;
+use comparable::{Changed::*, *};
 
 #[test]
 fn test_struct_0_fields() {
     #[derive(Comparable)]
     struct Unit;
 
-    assert_changes(&Unit, &Unit, Changed::Unchanged);
+    assert_changes(&Unit, &Unit, Unchanged);
 }
 
 #[test]
@@ -18,7 +18,7 @@ fn test_struct_1_unnamed_field_unit() {
     #[derive(Comparable)]
     struct UnitField(());
 
-    assert_changes(&UnitField(()), &UnitField(()), Changed::Unchanged);
+    assert_changes(&UnitField(()), &UnitField(()), Unchanged);
 }
 
 #[test]
@@ -26,11 +26,11 @@ fn test_struct_1_unnamed_field_scalar() {
     #[derive(Comparable)]
     struct ScalarField(i32);
 
-    assert_changes(&ScalarField(100), &ScalarField(100), Changed::Unchanged);
+    assert_changes(&ScalarField(100), &ScalarField(100), Unchanged);
     assert_changes(
         &ScalarField(100),
         &ScalarField(200),
-        Changed::Changed(ScalarFieldChange(I32Change(100, 200))),
+        Changed(ScalarFieldChange(I32Change(100, 200))),
     );
 }
 
@@ -39,25 +39,21 @@ fn test_struct_2_unnamed_fields_scalar() {
     #[derive(Comparable)]
     struct ScalarFields(i32, u64);
 
-    assert_changes(
-        &ScalarFields(100, 200),
-        &ScalarFields(100, 200),
-        Changed::Unchanged,
-    );
+    assert_changes(&ScalarFields(100, 200), &ScalarFields(100, 200), Unchanged);
     assert_changes(
         &ScalarFields(100, 200),
         &ScalarFields(200, 200),
-        Changed::Changed(vec![ScalarFieldsChange::Field0(I32Change(100, 200))]),
+        Changed(vec![ScalarFieldsChange::Field0(I32Change(100, 200))]),
     );
     assert_changes(
         &ScalarFields(100, 200),
         &ScalarFields(100, 300),
-        Changed::Changed(vec![ScalarFieldsChange::Field1(U64Change(200, 300))]),
+        Changed(vec![ScalarFieldsChange::Field1(U64Change(200, 300))]),
     );
     assert_changes(
         &ScalarFields(100, 200),
         &ScalarFields(200, 300),
-        Changed::Changed(vec![
+        Changed(vec![
             ScalarFieldsChange::Field0(I32Change(100, 200)),
             ScalarFieldsChange::Field1(U64Change(200, 300)),
         ]),
@@ -72,7 +68,7 @@ fn test_struct_1_unnamed_field_ignored() {
     assert_changes(
         &ScalarUnnamedVecIgnored(Vec::new()),
         &ScalarUnnamedVecIgnored(Vec::new()),
-        Changed::Unchanged,
+        Unchanged,
     );
 }
 
@@ -92,7 +88,7 @@ fn test_struct_1_unnamed_field_ignored_with_attrs() {
     assert_changes(
         &ScalarUnnamedVecIgnored(Vec::new()),
         &ScalarUnnamedVecIgnored(Vec::new()),
-        Changed::Unchanged,
+        Unchanged,
     );
 }
 
@@ -113,7 +109,7 @@ fn test_struct_2_named_fields_scalar() {
             some_int: 100,
             some_ulong: 200,
         },
-        Changed::Unchanged,
+        Unchanged,
     );
     assert_changes(
         &ScalarNamedFields {
@@ -124,7 +120,7 @@ fn test_struct_2_named_fields_scalar() {
             some_int: 200,
             some_ulong: 200,
         },
-        Changed::Changed(vec![ScalarNamedFieldsChange::SomeInt(I32Change(100, 200))]),
+        Changed(vec![ScalarNamedFieldsChange::SomeInt(I32Change(100, 200))]),
     );
     assert_changes(
         &ScalarNamedFields {
@@ -135,7 +131,7 @@ fn test_struct_2_named_fields_scalar() {
             some_int: 100,
             some_ulong: 300,
         },
-        Changed::Changed(vec![ScalarNamedFieldsChange::SomeUlong(U64Change(
+        Changed(vec![ScalarNamedFieldsChange::SomeUlong(U64Change(
             200, 300,
         ))]),
     );
@@ -148,7 +144,7 @@ fn test_struct_2_named_fields_scalar() {
             some_int: 200,
             some_ulong: 300,
         },
-        Changed::Changed(vec![
+        Changed(vec![
             ScalarNamedFieldsChange::SomeInt(I32Change(100, 200)),
             ScalarNamedFieldsChange::SomeUlong(U64Change(200, 300)),
         ]),
@@ -170,7 +166,7 @@ fn test_struct_1_named_field_ignored() {
         &ScalarNamedVecIgnored {
             some_ints: Vec::new(),
         },
-        Changed::Unchanged,
+        Unchanged,
     );
 }
 
@@ -188,6 +184,27 @@ fn test_struct_1_named_field_not_ignored() {
         &ScalarNamedVecNotIgnored {
             some_ints: Vec::new(),
         },
-        Changed::Unchanged,
+        Unchanged,
+    );
+}
+
+#[test]
+fn test_struct_1_named_field_self_describing() {
+    #[derive(Comparable, Clone, PartialEq, Debug)]
+    #[self_describing]
+    pub struct ScalarNamedVecNotIgnored {
+        pub some_ints: Vec<u8>,
+    }
+
+    assert_changes(
+        &ScalarNamedVecNotIgnored {
+            some_ints: vec![100],
+        },
+        &ScalarNamedVecNotIgnored {
+            some_ints: vec![200],
+        },
+        Changed(ScalarNamedVecNotIgnoredChange {
+            some_ints: vec![VecChange::Changed(0, U8Change(100, 200))],
+        }),
     );
 }

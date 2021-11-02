@@ -12,6 +12,7 @@ mod utils;
         describe_type,
         describe_body,
         no_description,
+        self_describing,
         compare_default,
         comparable_public,
         comparable_private,

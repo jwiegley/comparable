@@ -37,6 +37,7 @@ impl Definition {
     //
     // Desc associated type
     //
+    // NOTE: Never called if inputs.attrs.no_description is true.
     pub fn generate_desc_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
         let desc_name = format_ident!("{}Desc", &inputs.input.ident);
@@ -55,8 +56,12 @@ impl Definition {
                     .describe_type
                     .as_ref()
                     .unwrap_or(
-                        &syn::parse2(if inputs.attrs.compare_default {
+                        &syn::parse2(if inputs.attrs.self_describing {
+                            quote!(Self)
+                        } else if inputs.attrs.compare_default {
                             quote!(Self::Change)
+                        } else if let Some(ty) = &inputs.attrs.describe_type {
+                            quote!(#ty)
                         } else {
                             quote!(#desc_name)
                         })
@@ -64,7 +69,10 @@ impl Definition {
                     )
                     .clone(),
             ),
-            definition: if inputs.attrs.describe_type.is_some() || inputs.attrs.compare_default {
+            definition: if inputs.attrs.self_describing
+                || inputs.attrs.compare_default
+                || inputs.attrs.describe_type.is_some()
+            {
                 None
             } else {
                 Some(quote!(#desc_type))
@@ -77,7 +85,9 @@ impl Definition {
                     #[allow(unused_variables)] // compiler doesn't see the use of x
                     |x| quote!(#x),
                 )
-                .unwrap_or(if inputs.attrs.compare_default {
+                .unwrap_or(if inputs.attrs.self_describing {
+                    quote!(self.clone())
+                } else if inputs.attrs.compare_default {
                     quote!(#type_name::default().comparison(self).unwrap_or_default())
                 } else {
                     Self::generate_describe_method_body(
