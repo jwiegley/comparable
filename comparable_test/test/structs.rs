@@ -6,7 +6,7 @@
 use comparable::*;
 
 #[test]
-fn test_unit_struct() {
+fn test_struct_0_fields() {
     #[derive(Comparable)]
     struct Unit;
 
@@ -14,7 +14,7 @@ fn test_unit_struct() {
 }
 
 #[test]
-fn test_unnamed_singleton_struct_unit_field() {
+fn test_struct_1_unnamed_field_unit() {
     #[derive(Comparable)]
     struct UnitField(());
 
@@ -22,7 +22,7 @@ fn test_unnamed_singleton_struct_unit_field() {
 }
 
 #[test]
-fn test_unnamed_singleton_struct_scalar_field() {
+fn test_struct_1_unnamed_field_scalar() {
     #[derive(Comparable)]
     struct ScalarField(i32);
 
@@ -35,7 +35,7 @@ fn test_unnamed_singleton_struct_scalar_field() {
 }
 
 #[test]
-fn test_unnamed_struct_scalar_fields() {
+fn test_struct_2_unnamed_fields_scalar() {
     #[derive(Comparable)]
     struct ScalarFields(i32, u64);
 
@@ -65,7 +65,7 @@ fn test_unnamed_struct_scalar_fields() {
 }
 
 #[test]
-fn test_named_struct_scalar_fields() {
+fn test_struct_2_named_fields_scalar() {
     #[derive(Comparable)]
     struct ScalarNamedFields {
         some_int: i32,

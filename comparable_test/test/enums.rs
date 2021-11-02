@@ -6,7 +6,7 @@
 use comparable::*;
 
 #[test]
-fn test_unit_enum() {
+fn test_enum_0_variants() {
     #[derive(Comparable)]
     enum Unit {}
 
@@ -14,7 +14,7 @@ fn test_unit_enum() {
 }
 
 #[test]
-fn test_enum_singleton_variant_unit_field() {
+fn test_enum_1_variant_0_fields() {
     #[derive(Comparable)]
     enum UnitEnum {
         Field,
@@ -24,7 +24,7 @@ fn test_enum_singleton_variant_unit_field() {
 }
 
 #[test]
-fn test_enum_singleton_variant_scalar_field() {
+fn test_enum_1_variant_1_unnamed_field_scalar() {
     #[derive(Comparable)]
     enum ScalarEnum {
         Field(i32),
@@ -43,7 +43,7 @@ fn test_enum_singleton_variant_scalar_field() {
 }
 
 #[test]
-fn test_enum_same_fields() {
+fn test_enum_2_variants_1_unnamed_field_scalar() {
     #[derive(Comparable)]
     enum ScalarEnum {
         Field1(i32),
@@ -71,7 +71,7 @@ fn test_enum_same_fields() {
 }
 
 #[test]
-fn test_enum_singleton_variant_one_named_field() {
+fn test_enum_1_variant_1_named_field_scalar() {
     #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field { some_int: i32 },
@@ -92,7 +92,7 @@ fn test_enum_singleton_variant_one_named_field() {
 }
 
 #[test]
-fn test_enum_singleton_variant_named_fields() {
+fn test_enum_1_variant_2_named_fields_scalar() {
     #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field { some_int: i32, some_ulong: u64 },
@@ -154,7 +154,7 @@ fn test_enum_singleton_variant_named_fields() {
 }
 
 #[test]
-fn test_enum_same_named_fields() {
+fn test_enum_2_variants_1_named_fields_scalar() {
     #[derive(Comparable)]
     enum ScalarNamedEnum {
         Field1 { some_int: i32 },
