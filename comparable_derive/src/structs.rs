@@ -111,7 +111,13 @@ pub fn generate_comparison_body_for_structs(
         syn::Fields::Unit => (Vec::new(), Vec::new()),
     };
 
-    if is_datastruct_with_many_fields(st) {
+    if field_names.is_empty() {
+        quote!(comparable::Changed::Unchanged)
+    } else if field_names.len() == 1 {
+        quote! {
+            #(self.#field_names.comparison(&other.#field_names).map(#change_name))*
+        }
+    } else {
         quote! {
             let changes: Vec<#change_name> = vec![
                 #(self.#field_names.comparison(&other.#field_names)
@@ -125,10 +131,6 @@ pub fn generate_comparison_body_for_structs(
             } else {
                 comparable::Changed::Changed(changes)
             }
-        }
-    } else {
-        quote! {
-            #(self.#field_names.comparison(&other.#field_names).map(#change_name))*
         }
     }
 }

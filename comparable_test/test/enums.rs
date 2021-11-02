@@ -92,6 +92,21 @@ fn test_enum_1_variant_1_named_field_scalar() {
 }
 
 #[test]
+fn test_enum_1_variant_ignored() {
+    #[derive(Comparable)]
+    pub enum ScalarEnumIgnore {
+        #[comparable_ignore]
+        Field,
+    }
+
+    assert_changes(
+        &ScalarEnumIgnore::Field,
+        &ScalarEnumIgnore::Field,
+        Changed::Unchanged,
+    );
+}
+
+#[test]
 fn test_enum_1_variant_2_named_fields_scalar() {
     #[derive(Comparable)]
     enum ScalarNamedEnum {

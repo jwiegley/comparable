@@ -65,6 +65,25 @@ fn test_struct_2_unnamed_fields_scalar() {
 }
 
 #[test]
+fn test_struct_1_named_field_ignored() {
+    #[derive(Comparable)]
+    pub struct ScalarVec {
+        #[comparable_ignore]
+        pub some_ints: Vec<u8>,
+    }
+
+    assert_changes(
+        &ScalarVec {
+            some_ints: Vec::new(),
+        },
+        &ScalarVec {
+            some_ints: Vec::new(),
+        },
+        Changed::Unchanged,
+    );
+}
+
+#[test]
 fn test_struct_2_named_fields_scalar() {
     #[derive(Comparable)]
     struct ScalarNamedFields {

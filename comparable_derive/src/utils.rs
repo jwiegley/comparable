@@ -128,19 +128,9 @@ pub fn map_fields<'a, R>(
 
 pub fn map_variants<'a, R>(
     variants: impl IntoIterator<Item = &'a syn::Variant>,
-    mut f: impl FnMut(&syn::Variant) -> R,
+    f: impl FnMut(&syn::Variant) -> R,
 ) -> Vec<R> {
-    variants
-        .into_iter()
-        .map(|variant| {
-            if has_attr(&variant.attrs, "comparable_ignore").is_none() {
-                Some(f(variant))
-            } else {
-                None
-            }
-        })
-        .flatten()
-        .collect()
+    variants.into_iter().map(f).collect()
 }
 
 pub fn generate_type_definition(
