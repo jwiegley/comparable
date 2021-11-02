@@ -61,22 +61,23 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> syn::Data {
                 discriminant: Default::default(),
             }
         };
+
         let variants = match &st.fields {
             syn::Fields::Named(named) => map_fields(named.named.iter(), change_field),
             syn::Fields::Unnamed(unnamed) => map_fields(unnamed.unnamed.iter(), change_field),
             syn::Fields::Unit => Vec::new(),
         };
+
         syn::Data::Enum(syn::DataEnum {
             variants: FromIterator::from_iter(variants),
             enum_token: Default::default(),
             brace_token: Default::default(),
         })
     } else {
-        // A singleton struct is handled differently, since the
-        // only change that could occur is in the single field, we
-        // only need to store that change data, rather than the
-        // varying combinations that could occur in the case of
-        // multiple fields.
+        // A singleton struct is handled differently, since the only change
+        // that could occur is in the single field, we only need to store that
+        // change data, rather than the varying combinations that could occur
+        // in the case of multiple fields.
         map_on_fields_over_datastruct(st, |_, field| syn::Field {
             ty: Definition::assoc_type(&field.ty, "Change"),
             ..field.clone()
@@ -99,6 +100,7 @@ pub fn generate_comparison_body_for_structs(
             (quote!(#idx), format_ident!("Field{}", index))
         }
     };
+
     let (field_names, field_variants): (Vec<TokenStream>, Vec<syn::Ident>) = match &st.fields {
         syn::Fields::Named(named) => map_fields(named.named.iter(), inspect_field)
             .into_iter()
@@ -108,6 +110,7 @@ pub fn generate_comparison_body_for_structs(
             .unzip(),
         syn::Fields::Unit => (Vec::new(), Vec::new()),
     };
+
     if is_datastruct_with_many_fields(st) {
         quote! {
             let changes: Vec<#change_name> = vec![

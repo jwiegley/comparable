@@ -14,6 +14,14 @@ pub struct Definition {
     pub method_body: TokenStream,
 }
 
+impl quote::ToTokens for Definition {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(body) = &self.definition {
+            *tokens = quote!(#body);
+        }
+    }
+}
+
 impl Definition {
     pub fn ident_to_type(ident: &syn::Ident) -> syn::Type {
         syn::parse2(quote!(#ident)).unwrap_or_else(|_| panic!("Failed to parse type"))
@@ -31,9 +39,9 @@ impl Definition {
     }
 
     //
-    // Desc
+    // Desc associated type
     //
-    pub fn generate_desc_from_data(inputs: &Inputs) -> Self {
+    pub fn generate_desc_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
         let desc_name = format_ident!("{}Desc", &inputs.input.ident);
         let desc_type = generate_type_definition(
@@ -74,7 +82,7 @@ impl Definition {
                 .unwrap_or(if inputs.attrs.compare_default {
                     quote!(#type_name::default().comparison(self).unwrap_or_default())
                 } else {
-                    Self::generate_describe_body(
+                    Self::generate_describe_method_body(
                         &inputs.input.ident,
                         &desc_name,
                         &inputs.input.data,
@@ -84,9 +92,9 @@ impl Definition {
     }
 
     //
-    // describe
+    // describe method
     //
-    fn generate_describe_body(
+    fn generate_describe_method_body(
         type_name: &syn::Ident,
         desc_name: &syn::Ident,
         data: &syn::Data,
@@ -101,9 +109,9 @@ impl Definition {
     }
 
     //
-    // Change
+    // Change associated type
     //
-    pub fn generate_change_from_data(inputs: &Inputs) -> Self {
+    pub fn generate_change_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
         let change_name = format_ident!("{}Change", type_name);
         let change_type = generate_type_definition(
@@ -119,7 +127,7 @@ impl Definition {
             })
             .expect("Failed to parse Change type name"),
             definition: Some(quote!(#change_type)),
-            method_body: Self::generate_comparison_body(
+            method_body: Self::generate_comparison_method_body(
                 type_name,
                 &change_name,
                 &inputs.input.data,
@@ -138,9 +146,9 @@ impl Definition {
     }
 
     //
-    // comparison
+    // comparison method
     //
-    fn generate_comparison_body(
+    fn generate_comparison_method_body(
         type_name: &syn::Ident,
         change_name: &syn::Ident,
         data: &syn::Data,
@@ -160,14 +168,6 @@ impl Definition {
             syn::Data::Union(_un) => {
                 panic!("comparable_derive::generate_comparison_body not implemented for unions")
             }
-        }
-    }
-}
-
-impl quote::ToTokens for Definition {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        if let Some(body) = &self.definition {
-            *tokens = quote!(#body);
         }
     }
 }

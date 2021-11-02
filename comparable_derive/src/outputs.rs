@@ -13,6 +13,7 @@ pub struct Outputs {
 impl Outputs {
     pub fn generate(self, inputs: &Inputs) -> TokenStream {
         let Outputs { desc, change } = self;
+
         let impl_comparable = Self::impl_comparable(
             &inputs.input.ident,
             desc.as_ref().map(|d| &d.ty).unwrap_or(&unit_type()),
@@ -23,10 +24,12 @@ impl Outputs {
                 .map(|c| &c.method_body)
                 .unwrap_or(&quote!(comparable::Changed::Unchanged)),
         );
+
         #[allow(unused_variables)] // compiler doesn't see the use of x
         let desc = desc.map(|x| quote!(#x)).unwrap_or_default();
         #[allow(unused_variables)] // compiler doesn't see the use of x
         let change = change.map(|x| quote!(#x)).unwrap_or_default();
+
         quote! {
             #desc
             #change

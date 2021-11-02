@@ -53,12 +53,12 @@ impl<'a> Inputs<'a> {
             desc: if self.attrs.no_description {
                 None
             } else {
-                Some(Definition::generate_desc_from_data(self))
+                Some(Definition::generate_desc_type(self))
             },
             change: if is_unitary {
                 None
             } else {
-                Some(Definition::generate_change_from_data(self))
+                Some(Definition::generate_change_type(self))
             },
         }
     }

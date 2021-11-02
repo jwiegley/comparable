@@ -6,6 +6,120 @@ use std::iter::FromIterator;
 use crate::definition::*;
 use crate::utils::*;
 
+pub fn generate_describe_body_for_enums(
+    type_name: &syn::Ident,
+    desc_name: &syn::Ident,
+    en: &syn::DataEnum,
+) -> TokenStream {
+    let cases = map_variants(en.variants.iter(), |variant| {
+        let variant_name = &variant.ident;
+        match &variant.fields {
+            syn::Fields::Named(named) => {
+                let (field_indices, field_names): (Vec<syn::Ident>, Vec<syn::Ident>) =
+                    map_fields(named.named.iter(), |index, field| {
+                        (
+                            format_ident!("var{}", index),
+                            field
+                                .ident
+                                .as_ref()
+                                .expect("Found unnamed field in named struct")
+                                .clone(),
+                        )
+                    })
+                    .into_iter()
+                    .unzip();
+                quote! {
+                    #type_name::#variant_name { #(#field_names: #field_indices),* } =>
+                    #desc_name::#variant_name { #(#field_names: #field_indices.describe()),* }
+                }
+            }
+            syn::Fields::Unnamed(unnamed) => {
+                let vars = map_fields(unnamed.unnamed.iter(), |index, _| {
+                    format_ident!("var{}", index)
+                });
+                quote! {
+                    #type_name::#variant_name(#(#vars),*) =>
+                    #desc_name::#variant_name(#(#vars.describe()),*)
+                }
+            }
+            syn::Fields::Unit => {
+                quote! {
+                    #type_name::#variant_name => #desc_name::#variant_name
+                }
+            }
+        }
+    });
+    if cases.is_empty() {
+        quote!(panic!("Cannot construct empty enum"))
+    } else {
+        quote! {
+            match self {
+                #(#cases),*
+            }
+        }
+    }
+}
+
+pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) -> syn::Data {
+    syn::Data::Enum(syn::DataEnum {
+        variants: FromIterator::from_iter(
+            map_variants(en.variants.iter(), |variant| {
+                if variant.fields.is_empty() {
+                    None
+                } else {
+                    Some(syn::Variant {
+                        ident: format_ident!("Both{}", &variant.ident),
+                        fields: {
+                            let many_fields = variant.fields.len() > 1;
+                            map_on_fields(&variant.fields, |_, field| syn::Field {
+                                ty: {
+                                    let change_type = Definition::assoc_type(&field.ty, "Change");
+                                    if many_fields {
+                                        Definition::changed_type(&change_type)
+                                    } else {
+                                        change_type
+                                    }
+                                },
+                                ..field.clone()
+                            })
+                        },
+                        ..variant.clone()
+                    })
+                }
+            })
+            .into_iter()
+            .flatten()
+            .into_iter()
+            .chain(if en.variants.len() < 2 {
+                vec![]
+            } else {
+                vec![syn::Variant {
+                    ident: format_ident!("Different"),
+                    fields: syn::Fields::Unnamed({
+                        let desc_field = syn::Field {
+                            ident: None,
+                            ty: Definition::assoc_type(
+                                &Definition::ident_to_type(type_name),
+                                "Desc",
+                            ),
+                            attrs: Default::default(),
+                            vis: syn::Visibility::Inherited,
+                            colon_token: Default::default(),
+                        };
+                        syn::FieldsUnnamed {
+                            unnamed: FromIterator::from_iter(vec![desc_field.clone(), desc_field]),
+                            paren_token: Default::default(),
+                        }
+                    }),
+                    attrs: Default::default(),
+                    discriminant: Default::default(),
+                }]
+            }),
+        ),
+        ..*en
+    })
+}
+
 #[derive(Clone)]
 struct FieldDetails {
     ident: Option<syn::Ident>,
@@ -253,118 +367,4 @@ impl EnumDetails {
             }
         }
     }
-}
-
-pub fn generate_describe_body_for_enums(
-    type_name: &syn::Ident,
-    desc_name: &syn::Ident,
-    en: &syn::DataEnum,
-) -> TokenStream {
-    let cases = map_variants(en.variants.iter(), |variant| {
-        let variant_name = &variant.ident;
-        match &variant.fields {
-            syn::Fields::Named(named) => {
-                let (field_indices, field_names): (Vec<syn::Ident>, Vec<syn::Ident>) =
-                    map_fields(named.named.iter(), |index, field| {
-                        (
-                            format_ident!("var{}", index),
-                            field
-                                .ident
-                                .as_ref()
-                                .expect("Found unnamed field in named struct")
-                                .clone(),
-                        )
-                    })
-                    .into_iter()
-                    .unzip();
-                quote! {
-                    #type_name::#variant_name { #(#field_names: #field_indices),* } =>
-                    #desc_name::#variant_name { #(#field_names: #field_indices.describe()),* }
-                }
-            }
-            syn::Fields::Unnamed(unnamed) => {
-                let vars = map_fields(unnamed.unnamed.iter(), |index, _| {
-                    format_ident!("var{}", index)
-                });
-                quote! {
-                    #type_name::#variant_name(#(#vars),*) =>
-                    #desc_name::#variant_name(#(#vars.describe()),*)
-                }
-            }
-            syn::Fields::Unit => {
-                quote! {
-                    #type_name::#variant_name => #desc_name::#variant_name
-                }
-            }
-        }
-    });
-    if cases.is_empty() {
-        quote!(panic!("Cannot construct empty enum"))
-    } else {
-        quote! {
-            match self {
-                #(#cases),*
-            }
-        }
-    }
-}
-
-pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) -> syn::Data {
-    syn::Data::Enum(syn::DataEnum {
-        variants: FromIterator::from_iter(
-            map_variants(en.variants.iter(), |variant| {
-                if variant.fields.is_empty() {
-                    None
-                } else {
-                    Some(syn::Variant {
-                        ident: format_ident!("Both{}", &variant.ident),
-                        fields: {
-                            let many_fields = variant.fields.len() > 1;
-                            map_on_fields(&variant.fields, |_, field| syn::Field {
-                                ty: {
-                                    let change_type = Definition::assoc_type(&field.ty, "Change");
-                                    if many_fields {
-                                        Definition::changed_type(&change_type)
-                                    } else {
-                                        change_type
-                                    }
-                                },
-                                ..field.clone()
-                            })
-                        },
-                        ..variant.clone()
-                    })
-                }
-            })
-            .into_iter()
-            .flatten()
-            .into_iter()
-            .chain(if en.variants.len() < 2 {
-                vec![]
-            } else {
-                vec![syn::Variant {
-                    ident: format_ident!("Different"),
-                    fields: syn::Fields::Unnamed({
-                        let desc_field = syn::Field {
-                            ident: None,
-                            ty: Definition::assoc_type(
-                                &Definition::ident_to_type(type_name),
-                                "Desc",
-                            ),
-                            attrs: Default::default(),
-                            vis: syn::Visibility::Inherited,
-                            colon_token: Default::default(),
-                        };
-                        syn::FieldsUnnamed {
-                            unnamed: FromIterator::from_iter(vec![desc_field.clone(), desc_field]),
-                            paren_token: Default::default(),
-                        }
-                    }),
-                    attrs: Default::default(),
-                    discriminant: Default::default(),
-                }]
-            }),
-        ),
-        ..*en
-    })
 }
