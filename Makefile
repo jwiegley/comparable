@@ -12,7 +12,7 @@ test: build
 	cargo test --doc
 	cargo test
 
-clippy: test
+clippy: test docs
 	cargo clippy -j40 --tests -- -D clippy::all
 
 clean:

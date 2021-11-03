@@ -25,11 +25,15 @@ impl Attributes {
                 x.parse_args::<syn::Expr>()
                     .expect("Failed to parse \"describe_body\" attribute")
             }),
+
             no_description: has_attr(attrs, "no_description").is_some(),
             self_describing: has_attr(attrs, "self_describing").is_some(),
+
             compare_default: has_attr(attrs, "compare_default").is_some(),
+
             comparable_public: has_attr(attrs, "comparable_public").is_some(),
             comparable_private: has_attr(attrs, "comparable_private").is_some(),
+
             comparable_desc_suffix: has_attr(attrs, "comparable_desc_suffix")
                 .map(|x| {
                     x.parse_args::<syn::Ident>()

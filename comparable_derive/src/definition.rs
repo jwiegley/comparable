@@ -48,9 +48,9 @@ impl Definition {
         let desc_type = generate_type_definition(
             &inputs.visibility,
             &desc_name,
-            &map_on_fields_over_data(&inputs.input.data, |_, field| syn::Field {
-                ty: Self::assoc_type(&field.ty, "Desc"),
-                ..field.clone()
+            &map_on_fields_over_data(true, &inputs.input.data, |r| syn::Field {
+                ty: Self::assoc_type(&r.field.ty, "Desc"),
+                ..r.field.clone()
             }),
         );
         Self {
@@ -133,7 +133,7 @@ impl Definition {
             ty: change_type
                 .map(|_| {
                     (if let syn::Data::Struct(st) = &inputs.input.data {
-                        match field_count(st.fields.iter()) {
+                        match field_count(true, st.fields.iter()) {
                             0 => None,
                             1 => Some(quote!(#change_name)),
                             _ => Some(quote!(Vec<#change_name>)),

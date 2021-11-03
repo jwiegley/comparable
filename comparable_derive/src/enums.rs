@@ -16,10 +16,10 @@ pub fn generate_describe_body_for_enums(
         match &variant.fields {
             syn::Fields::Named(named) => {
                 let (field_indices, field_names): (Vec<syn::Ident>, Vec<syn::Ident>) =
-                    map_fields(named.named.iter(), |index, field| {
+                    map_fields(false, named.named.iter(), |r| {
                         (
-                            format_ident!("var{}", index),
-                            field
+                            format_ident!("var{}", r.index),
+                            r.field
                                 .ident
                                 .as_ref()
                                 .expect("Found unnamed field in named struct")
@@ -34,8 +34,8 @@ pub fn generate_describe_body_for_enums(
                 }
             }
             syn::Fields::Unnamed(unnamed) => {
-                let vars = map_fields(unnamed.unnamed.iter(), |index, _| {
-                    format_ident!("var{}", index)
+                let vars = map_fields(false, unnamed.unnamed.iter(), |r| {
+                    format_ident!("var{}", r.index)
                 });
                 quote! {
                     #type_name::#variant_name(#(#vars),*) =>
@@ -71,16 +71,16 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
                         ident: format_ident!("Both{}", &variant.ident),
                         fields: {
                             let many_fields = variant.fields.len() > 1;
-                            map_on_fields(&variant.fields, |_, field| syn::Field {
+                            map_on_fields(false, &variant.fields, |r| syn::Field {
                                 ty: {
-                                    let change_type = Definition::assoc_type(&field.ty, "Change");
+                                    let change_type = Definition::assoc_type(&r.field.ty, "Change");
                                     if many_fields {
                                         Definition::changed_type(&change_type)
                                     } else {
                                         change_type
                                     }
                                 },
-                                ..field.clone()
+                                ..r.field.clone()
                             })
                         },
                         ..variant.clone()
@@ -134,18 +134,19 @@ pub fn _create_change_type_for_enums_with_helpers(
                 if variant.fields.is_empty() {
                     None
                 } else {
-                    let apply_change_to_field = |_, field: &syn::Field| syn::Field {
-                        ty: Definition::assoc_type(&field.ty, "Change"),
-                        ..field.clone()
+                    let apply_change_to_field = |r: &FieldRef| syn::Field {
+                        ty: Definition::assoc_type(&r.field.ty, "Change"),
+                        ..r.field.clone()
                     };
                     Some(syn::Variant {
                         ident: format_ident!("Both{}", &variant.ident),
                         fields: {
                             if variant.fields.len() == 1 {
                                 // A map isn't needed, but it fits the pattern
-                                map_on_fields(&variant.fields, apply_change_to_field)
+                                map_on_fields(false, &variant.fields, apply_change_to_field)
                             } else {
                                 let fields_change_struct = map_on_fields_over_data(
+                                    false,
                                     &data_from_variant(variant),
                                     apply_change_to_field,
                                 );
@@ -300,22 +301,22 @@ impl VariantDetails {
     fn from(variant: &syn::Variant) -> Self {
         let fields = match &variant.fields {
             syn::Fields::Named(named) => VariantFields::Named(
-                map_fields(named.named.iter(), |index, field| {
+                map_fields(false, named.named.iter(), |r| {
                     (
-                        field
+                        r.field
                             .ident
                             .as_ref()
                             .expect("Unexpected unnamed field")
                             .clone(),
-                        FieldDetails::from(index, field),
+                        FieldDetails::from(r.index, r.field),
                     )
                 })
                 .into_iter()
                 .collect(),
             ),
             syn::Fields::Unnamed(unnamed) => VariantFields::Unnamed(
-                map_fields(unnamed.unnamed.iter(), |index, field| {
-                    FieldDetails::from(index, field)
+                map_fields(false, unnamed.unnamed.iter(), |r| {
+                    FieldDetails::from(r.index, r.field)
                 })
                 .into_iter()
                 .collect(),

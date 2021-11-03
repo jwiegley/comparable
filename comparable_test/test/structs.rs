@@ -229,3 +229,28 @@ fn test_struct_1_named_field_comparable_change_suffix() {
         }),
     );
 }
+
+#[test]
+fn test_struct_1_named_field_comparable_synthetic() {
+    #[derive(Comparable)]
+    pub struct Synthetics {
+        #[comparable_synthetic {
+            let full_value = |x: &Self| -> u8 { x.ensemble.iter().sum() };
+        }]
+        #[comparable_ignore]
+        pub ensemble: Vec<u8>,
+        pub some_int: u8,
+    }
+
+    assert_changes(
+        &Synthetics {
+            ensemble: vec![100],
+            some_int: 100,
+        },
+        &Synthetics {
+            ensemble: vec![200],
+            some_int: 100,
+        },
+        Changed(vec![SyntheticsChange::FullValue(U8Change(100, 200))]),
+    );
+}

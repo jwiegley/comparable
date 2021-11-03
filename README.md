@@ -283,14 +283,43 @@ struct Foo {
 }
 ```
 
+## `comparable_ignore`
+
 The first attribute macro you'll notice that can be applied to individual
 fields is `#[comparable_ignore]`, which must be used if the type in question
 cannot be compared for differences.
 
-**TODO**: jww (2021-11-01): Provide an attribute macro
-`#[comparable_view(function)]` for defining synthetic properties that receive
-`&self` as an argument and return a type implementing [`Comparable`] that can
-be differenced.
+## `comparable_synthetic`
+
+The `#[comparable_synthetic { <BINDINGS...> }]` attribute allows you to attach
+one or more "synthetic properties" to a field, which are then considered in
+both descriptions and change sets, as if they were actual fields with the
+computed value. Here is an example:
+
+```
+# use comparable_derive::*;
+#[derive(Comparable)]
+pub struct Synthetics {
+    #[comparable_synthetic {
+        let full_value = |x: &Self| -> u8 { x.ensemble.iter().sum() };
+    }]
+    #[comparable_ignore]
+    pub ensemble: Vec<u8>,
+    pub some_int: u8,
+}
+```
+
+This structure above has an `ensemble` field containing a vector of `u8`
+values. However, in tests we may not care if the vector's contents change, so
+long as the final sum remains the same. This is done by ignoring the ensemble
+field so that it's not generated or described at all, while creating a
+synthetic field _derived from the full object_ that yields the sum.
+
+Note that the syntax for the `comparable_synthetic` attribute is rather
+specific: a series of simply-named `let` bindings, where the value in each
+case is a fully typed closure that takes a reference to the object containing
+the original field (`&Self`), and yields a value of some type for which
+[`Comparable`] has been implemented or derived.
 
 ## Deriving Comparable for structs: the Desc type
 
