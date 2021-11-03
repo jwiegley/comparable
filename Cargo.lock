@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "comparable"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "comparable_derive",
  "pretty_assertions",
@@ -22,7 +22,7 @@ dependencies = [
 
 [[package]]
 name = "comparable_derive"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "comparable_test"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "comparable",
  "serde",
