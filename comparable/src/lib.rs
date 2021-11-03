@@ -305,7 +305,6 @@
 //!     }]
 //!     #[comparable_ignore]
 //!     pub ensemble: Vec<u8>,
-//!     pub some_int: u8,
 //! }
 //! ```
 //! 
