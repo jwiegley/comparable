@@ -308,11 +308,11 @@
 //! }
 //! ```
 //! 
-//! This structure above has an `ensemble` field containing a vector of `u8`
-//! values. However, in tests we may not care if the vector's contents change, so
-//! long as the final sum remains the same. This is done by ignoring the ensemble
-//! field so that it's not generated or described at all, while creating a
-//! synthetic field _derived from the full object_ that yields the sum.
+//! This structure has an `ensemble` field containing a vector of `u8` values.
+//! However, in tests we may not care if the vector's contents change, so long as
+//! the final sum remains the same. This is done by ignoring the ensemble field so
+//! that it's not generated or described at all, while creating a synthetic field
+//! _derived from the full object_ that yields the sum.
 //! 
 //! Note that the syntax for the `comparable_synthetic` attribute is rather
 //! specific: a series of simply-named `let` bindings, where the value in each
