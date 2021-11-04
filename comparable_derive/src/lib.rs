@@ -13,6 +13,7 @@ mod utils;
         describe_body,
         no_description,
         self_describing,
+        variant_struct_fields,
         compare_default,
         comparable_public,
         comparable_private,

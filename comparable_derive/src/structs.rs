@@ -60,11 +60,8 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data>
         }
         _ => {
             let change_field = |r: &FieldRef| -> syn::Variant {
-                let ident: syn::Ident = if let Some(name) = r.field.ident.as_ref() {
-                    syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site())
-                } else {
-                    format_ident!("Field{}", r.index)
-                };
+                let ident: syn::Ident =
+                    Definition::variant_name_from_field(r.index, &r.field.ident);
                 syn::Variant {
                     ident,
                     fields: syn::Fields::Unnamed(syn::FieldsUnnamed {

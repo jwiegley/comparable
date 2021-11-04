@@ -1,9 +1,10 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use std::collections::HashMap;
 use std::iter::FromIterator;
 
+use crate::attrs::*;
 use crate::definition::*;
+use crate::structs::*;
 use crate::utils::*;
 
 pub fn generate_describe_body_for_enums(
@@ -122,13 +123,14 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
 // enum's [`Comparable::Change`] to be `Vec<Change>`. However, we aren't using
 // it quite yet. It would only really be useful if most enum variants had lots
 // of fields.
-pub fn _create_change_type_for_enums_with_helpers(
+pub fn create_change_type_for_enums_with_helpers(
     type_name: &syn::Ident,
     change_suffix: &syn::Ident,
     en: &syn::DataEnum,
-) -> syn::Data {
-    let mut helper_structs: HashMap<syn::Ident, syn::Data> = HashMap::new();
-    syn::Data::Enum(syn::DataEnum {
+) -> (syn::Data, Vec<(syn::Ident, syn::Data)>) {
+    let mut helper_structs: Vec<(syn::Ident, syn::Data)> = Vec::new();
+    let helper_structs_ref = &mut helper_structs;
+    let change_type = syn::Data::Enum(syn::DataEnum {
         variants: FromIterator::from_iter(
             map_variants(en.variants.iter(), move |variant| {
                 if variant.fields.is_empty() {
@@ -145,19 +147,25 @@ pub fn _create_change_type_for_enums_with_helpers(
                                 // A map isn't needed, but it fits the pattern
                                 map_on_fields(false, &variant.fields, apply_change_to_field)
                             } else {
-                                let fields_change_struct = map_on_fields_over_data(
-                                    false,
-                                    &data_from_variant(variant),
-                                    apply_change_to_field,
-                                );
+                                let fields_struct = &data_from_variant(variant);
+                                let fields_change_struct = create_change_type_for_structs(
+                                    if let syn::Data::Struct(st) = &fields_struct {
+                                        st
+                                    } else {
+                                        panic!("field_struct is not a struct!")
+                                    },
+                                )
+                                .unwrap();
+
                                 let fields_change_name = format_ident!(
                                     "{}{}{}",
                                     type_name,
                                     &variant.ident,
                                     change_suffix
                                 );
-                                helper_structs
-                                    .insert(fields_change_name.clone(), fields_change_struct);
+                                helper_structs_ref
+                                    .push((fields_change_name.clone(), fields_change_struct));
+
                                 syn::Fields::Unnamed(syn::FieldsUnnamed {
                                     unnamed: FromIterator::from_iter(
                                         vec![syn::Field {
@@ -204,7 +212,8 @@ pub fn _create_change_type_for_enums_with_helpers(
             }),
         ),
         ..*en
-    })
+    });
+    (change_type, helper_structs)
 }
 
 #[derive(Clone)]
@@ -238,7 +247,7 @@ impl FieldDetails {
 
 #[derive(Clone)]
 enum VariantFields {
-    Named(HashMap<syn::Ident, FieldDetails>),
+    Named(Vec<(syn::Ident, FieldDetails)>),
     Unnamed(Vec<FieldDetails>),
     Unit,
 }
@@ -246,14 +255,14 @@ enum VariantFields {
 impl VariantFields {
     fn field_names(&self) -> Option<Vec<syn::Ident>> {
         match self {
-            VariantFields::Named(m) => Some(m.keys().cloned().into_iter().collect()),
+            VariantFields::Named(m) => Some(m.iter().map(|(k, _)| k.clone()).collect()),
             _ => None,
         }
     }
 
     fn field_details(&self) -> Vec<FieldDetails> {
         match self {
-            VariantFields::Named(m) => m.values().cloned().into_iter().collect(),
+            VariantFields::Named(m) => m.iter().map(|(_, v)| v.clone()).collect(),
             VariantFields::Unnamed(v) => v.to_vec(),
             VariantFields::Unit => Vec::new(),
         }
@@ -285,6 +294,25 @@ impl VariantFields {
             .iter()
             .map(|d| d.let_comparison.clone())
             .collect()
+    }
+
+    pub fn map_basic_field_info<R>(
+        &self,
+        mut f: impl FnMut(usize, &Option<syn::Ident>) -> R,
+    ) -> Vec<R> {
+        match self {
+            VariantFields::Named(m) => m
+                .iter()
+                .zip(0usize..)
+                .map(|((k, _), index)| f(index, &Some(k.clone())))
+                .collect(),
+            VariantFields::Unnamed(v) => v
+                .iter()
+                .zip(0usize..)
+                .map(|(_, index)| f(index, &None))
+                .collect(),
+            VariantFields::Unit => Vec::new(),
+        }
     }
 }
 
@@ -357,6 +385,7 @@ impl VariantDetails {
 
     fn derive_match_branch(
         mut self,
+        attrs: &Attributes,
         type_name: &syn::Ident,
         change_name: &syn::Ident,
         variant: &syn::Variant,
@@ -381,6 +410,28 @@ impl VariantDetails {
                 #(#changes_vars.map(
                     |changes_var0|
                     #change_name::#both_ident #fields_assignment))*
+            }
+        } else if attrs.variant_struct_fields {
+            let fields_change_name = format_ident!(
+                "{}{}{}",
+                type_name,
+                variant_name,
+                attrs.comparable_change_suffix
+            );
+            let capitalized_field_names =
+                fields.map_basic_field_info(Definition::variant_name_from_field);
+            quote! {
+                let changes: Vec<#fields_change_name> = vec![
+                    #(#changes_vars.map(#fields_change_name::#capitalized_field_names)),*
+                ]
+                    .into_iter()
+                    .flatten()
+                    .collect();
+                if changes.is_empty() {
+                    comparable::Changed::Unchanged
+                } else {
+                    comparable::Changed::Changed(#change_name::#both_ident(changes))
+                }
             }
         } else {
             quote! {
@@ -412,10 +463,20 @@ pub struct EnumDetails {
 }
 
 impl EnumDetails {
-    pub fn from(type_name: &syn::Ident, change_name: &syn::Ident, en: &syn::DataEnum) -> Self {
+    pub fn from(
+        attrs: &Attributes,
+        type_name: &syn::Ident,
+        change_name: &syn::Ident,
+        en: &syn::DataEnum,
+    ) -> Self {
         EnumDetails {
             variants: map_variants(en.variants.iter(), |variant| {
-                VariantDetails::from(variant).derive_match_branch(type_name, change_name, variant)
+                VariantDetails::from(variant).derive_match_branch(
+                    attrs,
+                    type_name,
+                    change_name,
+                    variant,
+                )
             })
             .into_iter()
             .collect(),

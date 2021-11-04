@@ -1,6 +1,8 @@
-use proc_macro2::TokenStream;
+use convert_case::{Case, Casing};
+use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 
+use crate::attrs::*;
 use crate::enums::*;
 use crate::inputs::*;
 use crate::structs::*;
@@ -32,6 +34,14 @@ impl Definition {
     pub fn changed_type(ty: &syn::Type) -> syn::Type {
         syn::parse2(quote!(comparable::Changed<#ty>))
             .unwrap_or_else(|_| panic!("Failed to parse Changed type"))
+    }
+
+    pub fn variant_name_from_field(index: usize, name: &Option<syn::Ident>) -> syn::Ident {
+        if let Some(name) = name.as_ref() {
+            syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site())
+        } else {
+            format_ident!("Field{}", index)
+        }
     }
 
     //
@@ -126,26 +136,37 @@ impl Definition {
     pub fn generate_change_type(inputs: &Inputs) -> Self {
         let type_name = &inputs.input.ident;
         let change_name = format_ident!("{}{}", type_name, inputs.attrs.comparable_change_suffix);
-        let change_type = Self::create_change_type(&inputs.input.ident, &inputs.input.data)
-            .map(|ty| generate_type_definition(&inputs.visibility, &change_name, &ty));
-        let definition = change_type.as_ref().map(|ty| quote!(#ty));
+        let change_type =
+            Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data).map(
+                |(ch_ty, helper_tys)| {
+                    let ch_def = generate_type_definition(&inputs.visibility, &change_name, &ch_ty);
+                    let helper_defs = helper_tys
+                        .iter()
+                        .map(|(name, ty)| generate_type_definition(&inputs.visibility, name, ty));
+                    quote! {
+                        #ch_def
+                        #(#helper_defs)*
+                    }
+                },
+            );
         Self {
-            ty: change_type
-                .map(|_| {
-                    (if let syn::Data::Struct(st) = &inputs.input.data {
-                        match field_count(true, st.fields.iter()) {
-                            0 => None,
-                            1 => Some(quote!(#change_name)),
-                            _ => Some(quote!(Vec<#change_name>)),
-                        }
-                    } else {
-                        Some(quote!(#change_name))
-                    })
-                    .map(|ty| syn::parse2(ty).expect("Failed to parse Change type name"))
+            ty: if change_type.is_some() {
+                (if let syn::Data::Struct(st) = &inputs.input.data {
+                    match field_count(true, st.fields.iter()) {
+                        0 => None,
+                        1 => Some(quote!(#change_name)),
+                        _ => Some(quote!(Vec<#change_name>)),
+                    }
+                } else {
+                    Some(quote!(#change_name))
                 })
-                .flatten(),
-            definition,
+                .map(|ty| syn::parse2(ty).expect("Failed to parse Change type name"))
+            } else {
+                None
+            },
+            definition: change_type,
             method_body: Self::generate_comparison_method_body(
+                &inputs.attrs,
                 type_name,
                 &change_name,
                 &inputs.input.data,
@@ -153,10 +174,22 @@ impl Definition {
         }
     }
 
-    fn create_change_type(type_name: &syn::Ident, data: &syn::Data) -> Option<syn::Data> {
+    fn create_change_type(
+        attrs: &Attributes,
+        type_name: &syn::Ident,
+        data: &syn::Data,
+    ) -> Option<(syn::Data, Vec<(syn::Ident, syn::Data)>)> {
         match data {
-            syn::Data::Struct(st) => create_change_type_for_structs(st),
-            syn::Data::Enum(en) => Some(create_change_type_for_enums(type_name, en)),
+            syn::Data::Struct(st) => create_change_type_for_structs(st).map(|x| (x, Vec::new())),
+            syn::Data::Enum(en) => Some(if attrs.variant_struct_fields {
+                create_change_type_for_enums_with_helpers(
+                    type_name,
+                    &attrs.comparable_change_suffix,
+                    en,
+                )
+            } else {
+                (create_change_type_for_enums(type_name, en), Vec::new())
+            }),
             syn::Data::Union(_un) => {
                 panic!("comparable_derive::generate_change_type not implemented for unions")
             }
@@ -167,6 +200,7 @@ impl Definition {
     // comparison method
     //
     fn generate_comparison_method_body(
+        attrs: &Attributes,
         type_name: &syn::Ident,
         change_name: &syn::Ident,
         data: &syn::Data,
@@ -179,7 +213,7 @@ impl Definition {
                         comparable::Changed::Unchanged
                     }
                 } else {
-                    EnumDetails::from(type_name, change_name, en)
+                    EnumDetails::from(attrs, type_name, change_name, en)
                         .generate_comparison_body(change_name)
                 }
             }
