@@ -223,7 +223,6 @@ struct FieldDetails {
     self_var: syn::Ident,
     other_var: syn::Ident,
     changes_var: syn::Ident,
-    let_comparison: TokenStream,
 }
 
 impl FieldDetails {
@@ -231,16 +230,12 @@ impl FieldDetails {
         let self_var = format_ident!("self_var{}", index);
         let other_var = format_ident!("other_var{}", index);
         let changes_var = format_ident!("changes_var{}", index);
-        let let_comparison = quote! {
-            let #changes_var = #self_var.comparison(&#other_var);
-        };
         FieldDetails {
             ident: field.ident.clone(),
             ty: field.ty.clone(),
             self_var,
             other_var,
             changes_var,
-            let_comparison,
         }
     }
 }
@@ -286,13 +281,6 @@ impl VariantFields {
         self.field_details()
             .iter()
             .map(|d| d.changes_var.clone())
-            .collect()
-    }
-
-    fn let_comparisons(&self) -> Vec<TokenStream> {
-        self.field_details()
-            .iter()
-            .map(|d| d.let_comparison.clone())
             .collect()
     }
 
@@ -401,7 +389,9 @@ impl VariantDetails {
         } = &self;
 
         let both_ident = format_ident!("Both{}", variant_name);
+        let self_vars = fields.self_vars();
         let changes_vars = fields.changes_vars();
+        let other_vars = fields.other_vars();
 
         let return_result = if changes_vars.is_empty() {
             quote!(comparable::Changed::Unchanged)
@@ -445,11 +435,10 @@ impl VariantDetails {
             }
         };
 
-        let let_comparisons = fields.let_comparisons();
         self.match_branch = quote! {
             (#type_name::#variant_name #fields_self_capture,
              #type_name::#variant_name #fields_other_capture) => {
-                #(#let_comparisons)*
+                #(let #changes_vars = #self_vars.comparison(&#other_vars);)*
                 #return_result
             }
         };
