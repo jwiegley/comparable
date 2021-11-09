@@ -259,26 +259,26 @@ fn test_struct_1_named_field_comparable_synthetic() {
 fn test_struct_3_named_fields_varying_visibility() {
     #[derive(Comparable)]
     pub struct Visible {
-        pub int_pub: i32,
-        pub(crate) int_pub_crate: i32,
-        int_private: i32,
+        pub pub_int_one: i32,
+        pub(crate) pub_crate_int_two: i32,
+        private_int_three: i32,
     }
 
     assert_changes(
         &Visible {
-            int_pub: 1,
-            int_pub_crate: 2,
-            int_private: 3,
+            pub_int_one: 1,
+            pub_crate_int_two: 2,
+            private_int_three: 3,
         },
         &Visible {
-            int_pub: 4,
-            int_pub_crate: 5,
-            int_private: 6,
+            pub_int_one: 4,
+            pub_crate_int_two: 5,
+            private_int_three: 6,
         },
         Changed(vec![
-            VisibleChange::IntPub(I32Change(1, 4)),
-            VisibleChange::IntPubCrate(I32Change(2, 5)),
-            VisibleChange::IntPrivate(I32Change(3, 6)),
+            VisibleChange::PubIntOne(I32Change(1, 4)),
+            VisibleChange::PubCrateIntTwo(I32Change(2, 5)),
+            VisibleChange::PrivateIntThree(I32Change(3, 6)),
         ]),
     );
 }
