@@ -432,3 +432,45 @@ fn test_enum_5_variants_as_struct() {
         ])),
     );
 }
+
+#[test]
+fn test_enum_fields_varying_visibility() {
+    #[derive(Comparable)]
+    pub enum VisiblePub {
+        Field { int: i32 },
+    }
+
+    #[derive(Comparable)]
+    pub(crate) enum VisiblePubCrate {
+        Field { int: i32 },
+    }
+
+    #[derive(Comparable)]
+    enum VisiblePrivate {
+        Field { int: i32 },
+    }
+
+    assert_changes(
+        &VisiblePub::Field { int: 1 },
+        &VisiblePub::Field { int: 4 },
+        Changed(VisiblePubChange::BothField {
+            int: I32Change(1, 4),
+        }),
+    );
+
+    assert_changes(
+        &VisiblePubCrate::Field { int: 1 },
+        &VisiblePubCrate::Field { int: 4 },
+        Changed(VisiblePubCrateChange::BothField {
+            int: I32Change(1, 4),
+        }),
+    );
+
+    assert_changes(
+        &VisiblePrivate::Field { int: 1 },
+        &VisiblePrivate::Field { int: 4 },
+        Changed(VisiblePrivateChange::BothField {
+            int: I32Change(1, 4),
+        }),
+    );
+}

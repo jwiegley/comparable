@@ -254,3 +254,31 @@ fn test_struct_1_named_field_comparable_synthetic() {
         Changed(vec![SyntheticsChange::FullValue(U8Change(100, 200))]),
     );
 }
+
+#[test]
+fn test_struct_3_named_fields_varying_visibility() {
+    #[derive(Comparable)]
+    pub struct Visible {
+        pub int_pub: i32,
+        pub(crate) int_pub_crate: i32,
+        int_private: i32,
+    }
+
+    assert_changes(
+        &Visible {
+            int_pub: 1,
+            int_pub_crate: 2,
+            int_private: 3,
+        },
+        &Visible {
+            int_pub: 4,
+            int_pub_crate: 5,
+            int_private: 6,
+        },
+        Changed(vec![
+            VisibleChange::IntPub(I32Change(1, 4)),
+            VisibleChange::IntPubCrate(I32Change(2, 5)),
+            VisibleChange::IntPrivate(I32Change(3, 6)),
+        ]),
+    );
+}

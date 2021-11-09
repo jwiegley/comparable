@@ -10,11 +10,11 @@
 
 with pkgs; rustPlatform.buildRustPackage rec {
   pname = "comparable";
-  version = "0.3.2";
+  version = "0.4.0";
 
   src = ./.;
 
-  cargoSha256 = "010fdgly3f60lkazg63qdapyivyxyb7im05y0zjilkamzyi0k7jb";
+  cargoSha256 = "0fnppr8kaxmxbpzx8gf0c8cs3pxi1x24iia44n5lk0p0qgmm2ly8";
 
   cargoBuildFlags = [];
 

@@ -230,13 +230,14 @@ pub fn generate_type_definition(
             match &st.fields {
                 syn::Fields::Named(named) => {
                     let fields = map_fields(false, named.named.iter(), |r| {
+                        let vis = &r.field.vis;
                         let ident = r
                             .field
                             .ident
                             .as_ref()
                             .expect("Found unnamed field in named struct");
                         let ty = &r.field.ty;
-                        quote!(#ident: #ty)
+                        quote!(#vis #ident: #ty)
                     });
                     quote! {
                         {
@@ -245,10 +246,14 @@ pub fn generate_type_definition(
                     }
                 }
                 syn::Fields::Unnamed(unnamed) => {
-                    let field_types =
-                        map_fields(false, unnamed.unnamed.iter(), |r| r.field.ty.clone());
+                    let (field_vis, field_types): (Vec<syn::Visibility>, Vec<syn::Type>) =
+                        map_fields(false, unnamed.unnamed.iter(), |r| {
+                            (r.field.vis.clone(), r.field.ty.clone())
+                        })
+                        .into_iter()
+                        .unzip();
                     quote! {
-                        (#(#field_types),*);
+                        (#(#field_vis #field_types),*);
                     }
                 }
                 syn::Fields::Unit => {
@@ -262,23 +267,28 @@ pub fn generate_type_definition(
                 match &variant.fields {
                     syn::Fields::Named(named) => {
                         let fields = map_fields(false, named.named.iter(), |r| {
+                            let vis = &r.field.vis;
                             let ident = r
                                 .field
                                 .ident
                                 .as_ref()
                                 .expect("Found unnamed field in named struct");
                             let ty = &r.field.ty;
-                            quote!(#ident: #ty)
+                            quote!(#vis #ident: #ty)
                         });
                         quote! {
                             #variant_name { #(#fields),* }
                         }
                     }
                     syn::Fields::Unnamed(unnamed) => {
-                        let field_types =
-                            map_fields(false, unnamed.unnamed.iter(), |r| r.field.ty.clone());
+                        let (field_vis, field_types): (Vec<syn::Visibility>, Vec<syn::Type>) =
+                            map_fields(false, unnamed.unnamed.iter(), |r| {
+                                (r.field.vis.clone(), r.field.ty.clone())
+                            })
+                            .into_iter()
+                            .unzip();
                         quote! {
-                            #variant_name(#(#field_types),*)
+                            #variant_name(#(#field_vis #field_types),*)
                         }
                     }
                     syn::Fields::Unit => {
