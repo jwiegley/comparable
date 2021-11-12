@@ -12,13 +12,13 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        crateName = "comparable";
+        name = "comparable";
 
         inherit (import "${crate2nix}/tools.nix" { inherit pkgs; })
           generatedCargoNix;
 
         project = pkgs.callPackage (generatedCargoNix {
-          name = crateName;
+          inherit name;
           src = ./.;
         }) {
           defaultCrateOverrides = pkgs.defaultCrateOverrides // {
@@ -27,9 +27,9 @@
         };
 
       in {
-        packages.${crateName} = project.rootCrate.build;
+        packages.${name} = project.rootCrate.build;
 
-        defaultPackage = self.packages.${system}.${crateName};
+        defaultPackage = self.packages.${system}.${name};
 
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.packages.${system};
