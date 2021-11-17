@@ -14,7 +14,7 @@ means that some types, like
 must be differenced after ordering the keys first, so that the set of changes
 produced can be made deterministic and thus expressible as a test expectation.
 
-To these ends, the function [`assert_changes`] is also provided, taking two
+To these ends, the macro [`assert_changes!`] is also provided, taking two
 values of the same type along with an expected "change description" as
 returned by `foo.comparison(&bar)`. This function uses the
 [`pretty_assertions`](https://crates.io/crates/pretty_assertions) crate under
@@ -32,7 +32,7 @@ testing, do the following:
    a. Create the initial state or dataset you intend to test and make a copy
       of it.
    b. Apply your operations and changes to this state.
-   c. Use [`assert_changes`] between the initial state and the resulting state
+   c. Use [`assert_changes!`] between the initial state and the resulting state
       to assert that whatever happened is exactly what you expected to happen.
 
 The main benefit of this approach over the usual method of "probing" the
@@ -139,10 +139,10 @@ following assertions hold:
 
 ```
 # use comparable::*;
-assert_changes(&100, &100, Changed::Unchanged);
-assert_changes(&100, &200, Changed::Changed(I32Change(100, 200)));
-assert_changes(&true, &false, Changed::Changed(BoolChange(true, false)));
-assert_changes(
+assert_changes!(&100, &100, Changed::Unchanged);
+assert_changes!(&100, &200, Changed::Changed(I32Change(100, 200)));
+assert_changes!(&true, &false, Changed::Changed(BoolChange(true, false)));
+assert_changes!(
     &"foo",
     &"bar",
     Changed::Changed(StringChange("foo".to_string(), "bar".to_string())),
@@ -172,12 +172,12 @@ Here are a few examples, taken from the `comparable_test` test suite:
 # use comparable::*;
 # use std::collections::HashSet;
 // Vectors
-assert_changes(
+assert_changes!(
     &vec![1 as i32, 2],
     &vec![1 as i32, 2, 3],
     Changed::Changed(vec![VecChange::Added(2, 3)]),
 );
-assert_changes(
+assert_changes!(
     &vec![1 as i32, 3],
     &vec![1 as i32, 2, 3],
     Changed::Changed(vec![
@@ -185,7 +185,7 @@ assert_changes(
         VecChange::Added(2, 3),
     ]),
 );
-assert_changes(
+assert_changes!(
     &vec![1 as i32, 2, 3],
     &vec![1 as i32, 3],
     Changed::Changed(vec![
@@ -193,29 +193,29 @@ assert_changes(
         VecChange::Removed(2, 3),
     ]),
 );
-assert_changes(
+assert_changes!(
     &vec![1 as i32, 2, 3],
     &vec![1 as i32, 4, 3],
     Changed::Changed(vec![VecChange::Changed(1, I32Change(2, 4))]),
 );
 
 // Sets
-assert_changes(
+assert_changes!(
     &HashSet::from(vec![1 as i32, 2].into_iter().collect()),
     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
     Changed::Changed(vec![SetChange::Added(3)]),
 );
-assert_changes(
+assert_changes!(
     &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
     Changed::Changed(vec![SetChange::Added(2)]),
 );
-assert_changes(
+assert_changes!(
     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
     &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
     Changed::Changed(vec![SetChange::Removed(2)]),
 );
-assert_changes(
+assert_changes!(
     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
     &HashSet::from(vec![1 as i32, 4, 3].into_iter().collect()),
     Changed::Changed(vec![SetChange::Added(4), SetChange::Removed(2)]),
@@ -273,27 +273,27 @@ Here are a few examples, taken from the `comparable_test` test suite:
 # use comparable::*;
 # use std::collections::HashMap;
 // HashMaps
-assert_changes(
+assert_changes!(
     &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
     Changed::Changed(vec![MapChange::Added(2, 3)]),
 );
-assert_changes(
+assert_changes!(
     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
     &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
     Changed::Changed(vec![MapChange::Removed(2)]),
 );
-assert_changes(
+assert_changes!(
     &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
     Changed::Changed(vec![MapChange::Added(1, 2)]),
 );
-assert_changes(
+assert_changes!(
     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
     &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
     Changed::Changed(vec![MapChange::Removed(1)]),
 );
-assert_changes(
+assert_changes!(
     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
     &HashMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
     Changed::Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
@@ -611,7 +611,7 @@ Here is an abbreviated example of how this looks when asserting changes for a
 struct with multiple fields:
 
 ```ignore
-assert_changes(
+assert_changes!(
     &initial_foo, &later_foo,
     Changed::Changed(vec![
         MyStructChange::Bar(...),

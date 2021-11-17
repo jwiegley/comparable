@@ -18,7 +18,7 @@ fn test_enum_1_variant_0_fields() {
         Field,
     }
 
-    assert_changes(&UnitEnum::Field, &UnitEnum::Field, Unchanged);
+    assert_changes!(&UnitEnum::Field, &UnitEnum::Field, Unchanged);
 }
 
 #[test]
@@ -28,8 +28,8 @@ fn test_enum_1_variant_1_unnamed_field_scalar() {
         Field(i32),
     }
 
-    assert_changes(&ScalarEnum::Field(100), &ScalarEnum::Field(100), Unchanged);
-    assert_changes(
+    assert_changes!(&ScalarEnum::Field(100), &ScalarEnum::Field(100), Unchanged);
+    assert_changes!(
         &ScalarEnum::Field(100),
         &ScalarEnum::Field(200),
         Changed(ScalarEnumChange::BothField(I32Change(100, 200))),
@@ -44,17 +44,17 @@ fn test_enum_2_variants_1_unnamed_field_scalar() {
         Field2(i32),
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarEnum::Field1(100),
         &ScalarEnum::Field1(100),
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &ScalarEnum::Field1(100),
         &ScalarEnum::Field1(200),
         Changed(ScalarEnumChange::BothField1(I32Change(100, 200))),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarEnum::Field1(100),
         &ScalarEnum::Field2(100),
         Changed(ScalarEnumChange::Different(
@@ -71,12 +71,12 @@ fn test_enum_1_variant_1_named_field_scalar() {
         Field { some_int: i32 },
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field { some_int: 100 },
         &ScalarNamedEnum::Field { some_int: 100 },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field { some_int: 100 },
         &ScalarNamedEnum::Field { some_int: 200 },
         Changed(ScalarNamedEnumChange::BothField {
@@ -93,7 +93,7 @@ fn test_enum_1_variant_ignored() {
         Field,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarEnumIgnore::Field,
         &ScalarEnumIgnore::Field,
         Unchanged,
@@ -107,7 +107,7 @@ fn test_enum_1_variant_2_named_fields_scalar() {
         Field { some_int: i32, some_ulong: u64 },
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field {
             some_int: 100,
             some_ulong: 200,
@@ -118,7 +118,7 @@ fn test_enum_1_variant_2_named_fields_scalar() {
         },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field {
             some_int: 100,
             some_ulong: 200,
@@ -132,7 +132,7 @@ fn test_enum_1_variant_2_named_fields_scalar() {
             some_ulong: Unchanged,
         }),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field {
             some_int: 100,
             some_ulong: 200,
@@ -146,7 +146,7 @@ fn test_enum_1_variant_2_named_fields_scalar() {
             some_ulong: Changed(U64Change(200, 300)),
         }),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field {
             some_int: 100,
             some_ulong: 200,
@@ -170,19 +170,19 @@ fn test_enum_2_variants_1_named_fields_scalar() {
         Field2 { some_int: i32 },
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field1 { some_int: 100 },
         &ScalarNamedEnum::Field1 { some_int: 100 },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field1 { some_int: 100 },
         &ScalarNamedEnum::Field1 { some_int: 200 },
         Changed(ScalarNamedEnumChange::BothField1 {
             some_int: I32Change(100, 200),
         }),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedEnum::Field1 { some_int: 100 },
         &ScalarNamedEnum::Field2 { some_int: 100 },
         Changed(ScalarNamedEnumChange::Different(
@@ -203,25 +203,25 @@ fn test_enum_5_variants() {
         ScalarNamedFields { some_int: i32, some_ulong: u64 },
     }
 
-    assert_changes(&MyEnum::UnitField, &MyEnum::UnitField, Unchanged);
+    assert_changes!(&MyEnum::UnitField, &MyEnum::UnitField, Unchanged);
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedField(100),
         &MyEnum::ScalarUnnamedField(100),
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedField(100),
         &MyEnum::ScalarUnnamedField(200),
         Changed(MyEnumChange::BothScalarUnnamedField(I32Change(100, 200))),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedField { some_int: 100 },
         &MyEnum::ScalarNamedField { some_int: 100 },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedField { some_int: 100 },
         &MyEnum::ScalarNamedField { some_int: 200 },
         Changed(MyEnumChange::BothScalarNamedField {
@@ -229,12 +229,12 @@ fn test_enum_5_variants() {
         }),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(100, 200),
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(200, 200),
         Changed(MyEnumChange::BothScalarUnnamedFields(
@@ -242,7 +242,7 @@ fn test_enum_5_variants() {
             Unchanged,
         )),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(100, 300),
         Changed(MyEnumChange::BothScalarUnnamedFields(
@@ -250,7 +250,7 @@ fn test_enum_5_variants() {
             Changed(U64Change(200, 300)),
         )),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(200, 300),
         Changed(MyEnumChange::BothScalarUnnamedFields(
@@ -259,7 +259,7 @@ fn test_enum_5_variants() {
         )),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -270,7 +270,7 @@ fn test_enum_5_variants() {
         },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -284,7 +284,7 @@ fn test_enum_5_variants() {
             some_ulong: Unchanged,
         }),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -298,7 +298,7 @@ fn test_enum_5_variants() {
             some_ulong: Changed(U64Change(200, 300)),
         }),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -326,25 +326,25 @@ fn test_enum_5_variants_as_struct() {
         ScalarNamedFields { some_int: i32, some_ulong: u64 },
     }
 
-    assert_changes(&MyEnum::UnitField, &MyEnum::UnitField, Unchanged);
+    assert_changes!(&MyEnum::UnitField, &MyEnum::UnitField, Unchanged);
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedField(100),
         &MyEnum::ScalarUnnamedField(100),
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedField(100),
         &MyEnum::ScalarUnnamedField(200),
         Changed(MyEnumChange::BothScalarUnnamedField(I32Change(100, 200))),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedField { some_int: 100 },
         &MyEnum::ScalarNamedField { some_int: 100 },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedField { some_int: 100 },
         &MyEnum::ScalarNamedField { some_int: 200 },
         Changed(MyEnumChange::BothScalarNamedField {
@@ -352,26 +352,26 @@ fn test_enum_5_variants_as_struct() {
         }),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(100, 200),
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(200, 200),
         Changed(MyEnumChange::BothScalarUnnamedFields(vec![
             MyEnumScalarUnnamedFieldsChange::Field0(I32Change(100, 200)),
         ])),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(100, 300),
         Changed(MyEnumChange::BothScalarUnnamedFields(vec![
             MyEnumScalarUnnamedFieldsChange::Field1(U64Change(200, 300)),
         ])),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarUnnamedFields(100, 200),
         &MyEnum::ScalarUnnamedFields(200, 300),
         Changed(MyEnumChange::BothScalarUnnamedFields(vec![
@@ -380,7 +380,7 @@ fn test_enum_5_variants_as_struct() {
         ])),
     );
 
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -391,7 +391,7 @@ fn test_enum_5_variants_as_struct() {
         },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -404,7 +404,7 @@ fn test_enum_5_variants_as_struct() {
             MyEnumScalarNamedFieldsChange::SomeInt(I32Change(100, 200)),
         ])),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -417,7 +417,7 @@ fn test_enum_5_variants_as_struct() {
             MyEnumScalarNamedFieldsChange::SomeUlong(U64Change(200, 300)),
         ])),
     );
-    assert_changes(
+    assert_changes!(
         &MyEnum::ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -450,7 +450,7 @@ fn test_enum_fields_varying_visibility() {
         Field { int: i32 },
     }
 
-    assert_changes(
+    assert_changes!(
         &VisiblePub::Field { int: 1 },
         &VisiblePub::Field { int: 4 },
         Changed(VisiblePubChange::BothField {
@@ -458,7 +458,7 @@ fn test_enum_fields_varying_visibility() {
         }),
     );
 
-    assert_changes(
+    assert_changes!(
         &VisiblePubCrate::Field { int: 1 },
         &VisiblePubCrate::Field { int: 4 },
         Changed(VisiblePubCrateChange::BothField {
@@ -466,7 +466,7 @@ fn test_enum_fields_varying_visibility() {
         }),
     );
 
-    assert_changes(
+    assert_changes!(
         &VisiblePrivate::Field { int: 1 },
         &VisiblePrivate::Field { int: 4 },
         Changed(VisiblePrivateChange::BothField {

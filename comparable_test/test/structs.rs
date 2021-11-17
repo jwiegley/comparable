@@ -10,7 +10,7 @@ fn test_struct_0_fields() {
     #[derive(Comparable)]
     struct Unit;
 
-    assert_changes(&Unit, &Unit, Unchanged);
+    assert_changes!(&Unit, &Unit, Unchanged);
 }
 
 #[test]
@@ -18,7 +18,7 @@ fn test_struct_1_unnamed_field_unit() {
     #[derive(Comparable)]
     struct UnitField(());
 
-    assert_changes(&UnitField(()), &UnitField(()), Unchanged);
+    assert_changes!(&UnitField(()), &UnitField(()), Unchanged);
 }
 
 #[test]
@@ -26,8 +26,8 @@ fn test_struct_1_unnamed_field_scalar() {
     #[derive(Comparable)]
     struct ScalarField(i32);
 
-    assert_changes(&ScalarField(100), &ScalarField(100), Unchanged);
-    assert_changes(
+    assert_changes!(&ScalarField(100), &ScalarField(100), Unchanged);
+    assert_changes!(
         &ScalarField(100),
         &ScalarField(200),
         Changed(ScalarFieldChange(I32Change(100, 200))),
@@ -39,18 +39,18 @@ fn test_struct_2_unnamed_fields_scalar() {
     #[derive(Comparable)]
     struct ScalarFields(i32, u64);
 
-    assert_changes(&ScalarFields(100, 200), &ScalarFields(100, 200), Unchanged);
-    assert_changes(
+    assert_changes!(&ScalarFields(100, 200), &ScalarFields(100, 200), Unchanged);
+    assert_changes!(
         &ScalarFields(100, 200),
         &ScalarFields(200, 200),
         Changed(vec![ScalarFieldsChange::Field0(I32Change(100, 200))]),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarFields(100, 200),
         &ScalarFields(100, 300),
         Changed(vec![ScalarFieldsChange::Field1(U64Change(200, 300))]),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarFields(100, 200),
         &ScalarFields(200, 300),
         Changed(vec![
@@ -65,7 +65,7 @@ fn test_struct_1_unnamed_field_ignored() {
     #[derive(Comparable)]
     pub struct ScalarUnnamedVecIgnored(#[comparable_ignore] pub Vec<u8>);
 
-    assert_changes(
+    assert_changes!(
         &ScalarUnnamedVecIgnored(Vec::new()),
         &ScalarUnnamedVecIgnored(Vec::new()),
         Unchanged,
@@ -85,7 +85,7 @@ fn test_struct_1_unnamed_field_ignored_with_attrs() {
         }
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarUnnamedVecIgnored(Vec::new()),
         &ScalarUnnamedVecIgnored(Vec::new()),
         Unchanged,
@@ -100,7 +100,7 @@ fn test_struct_2_named_fields_scalar() {
         some_ulong: u64,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -111,7 +111,7 @@ fn test_struct_2_named_fields_scalar() {
         },
         Unchanged,
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -122,7 +122,7 @@ fn test_struct_2_named_fields_scalar() {
         },
         Changed(vec![ScalarNamedFieldsChange::SomeInt(I32Change(100, 200))]),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -135,7 +135,7 @@ fn test_struct_2_named_fields_scalar() {
             200, 300,
         ))]),
     );
-    assert_changes(
+    assert_changes!(
         &ScalarNamedFields {
             some_int: 100,
             some_ulong: 200,
@@ -159,7 +159,7 @@ fn test_struct_1_named_field_ignored() {
         pub some_ints: Vec<u8>,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedVecIgnored {
             some_ints: Vec::new(),
         },
@@ -177,7 +177,7 @@ fn test_struct_1_named_field_not_ignored() {
         pub some_ints: Vec<u8>,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedVecNotIgnored {
             some_ints: Vec::new(),
         },
@@ -196,7 +196,7 @@ fn test_struct_1_named_field_self_describing() {
         pub some_ints: Vec<u8>,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedVecNotIgnored {
             some_ints: vec![100],
         },
@@ -217,7 +217,7 @@ fn test_struct_1_named_field_comparable_change_suffix() {
         pub some_ints: Vec<u8>,
     }
 
-    assert_changes(
+    assert_changes!(
         &ScalarNamedVecNotIgnored {
             some_ints: vec![100],
         },
@@ -242,7 +242,7 @@ fn test_struct_1_named_field_comparable_synthetic() {
         pub some_int: u8,
     }
 
-    assert_changes(
+    assert_changes!(
         &Synthetics {
             ensemble: vec![100],
             some_int: 100,
@@ -264,7 +264,7 @@ fn test_struct_3_named_fields_varying_visibility() {
         private_int_three: i32,
     }
 
-    assert_changes(
+    assert_changes!(
         &Visible {
             pub_int_one: 1,
             pub_crate_int_two: 2,

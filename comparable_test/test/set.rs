@@ -7,8 +7,8 @@ use comparable::{assert_changes, Changed::*, I32Change, SetChange, VecChange};
 
 #[test]
 fn test_vec() {
-    assert_changes(&(vec![] as Vec<i32>), &vec![], Unchanged);
-    assert_changes(
+    assert_changes!(&(vec![] as Vec<i32>), &vec![], Unchanged);
+    assert_changes!(
         &vec![],
         &vec![1 as i32, 2, 3],
         Changed(vec![
@@ -17,7 +17,7 @@ fn test_vec() {
             VecChange::Added(2, 3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 2, 3],
         &vec![],
         Changed(vec![
@@ -26,17 +26,17 @@ fn test_vec() {
             VecChange::Removed(2, 3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 2],
         &vec![1 as i32, 2, 3],
         Changed(vec![VecChange::Added(2, 3)]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 2, 3],
         &vec![1 as i32, 2],
         Changed(vec![VecChange::Removed(2, 3)]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 3],
         &vec![1 as i32, 2, 3],
         Changed(vec![
@@ -44,7 +44,7 @@ fn test_vec() {
             VecChange::Added(2, 3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 2, 3],
         &vec![1 as i32, 3],
         Changed(vec![
@@ -52,7 +52,7 @@ fn test_vec() {
             VecChange::Removed(2, 3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &vec![1 as i32, 2, 3],
         &vec![1 as i32, 4, 3],
         Changed(vec![VecChange::Changed(1, I32Change(2, 4))]),
@@ -61,8 +61,8 @@ fn test_vec() {
 
 #[test]
 fn test_hashset() {
-    assert_changes(&(vec![] as Vec<i32>), &vec![], Unchanged);
-    assert_changes(
+    assert_changes!(&(vec![] as Vec<i32>), &vec![], Unchanged);
+    assert_changes!(
         &HashSet::from(vec![].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![
@@ -71,7 +71,7 @@ fn test_hashset() {
             SetChange::Added(3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &HashSet::from(vec![].into_iter().collect()),
         Changed(vec![
@@ -80,22 +80,22 @@ fn test_hashset() {
             SetChange::Removed(3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &HashSet::from(vec![1 as i32, 2].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(3)]),
     );
-    assert_changes(
+    assert_changes!(
         &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(2)]),
     );
-    assert_changes(
+    assert_changes!(
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
         Changed(vec![SetChange::Removed(2)]),
     );
-    assert_changes(
+    assert_changes!(
         &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &HashSet::from(vec![1 as i32, 4, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(4), SetChange::Removed(2)]),
@@ -104,8 +104,8 @@ fn test_hashset() {
 
 #[test]
 fn test_btreeset() {
-    assert_changes(&(vec![] as Vec<i32>), &vec![], Unchanged);
-    assert_changes(
+    assert_changes!(&(vec![] as Vec<i32>), &vec![], Unchanged);
+    assert_changes!(
         &BTreeSet::from(vec![].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![
@@ -114,7 +114,7 @@ fn test_btreeset() {
             SetChange::Added(3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &BTreeSet::from(vec![].into_iter().collect()),
         Changed(vec![
@@ -123,27 +123,27 @@ fn test_btreeset() {
             SetChange::Removed(3),
         ]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 2].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(3)]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 2].into_iter().collect()),
         Changed(vec![SetChange::Removed(3)]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 3].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(2)]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 3].into_iter().collect()),
         Changed(vec![SetChange::Removed(2)]),
     );
-    assert_changes(
+    assert_changes!(
         &BTreeSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
         &BTreeSet::from(vec![1 as i32, 4, 3].into_iter().collect()),
         Changed(vec![SetChange::Added(4), SetChange::Removed(2)]),

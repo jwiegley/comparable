@@ -30,6 +30,15 @@ pub use crate::string::*;
 
 pub use crate::types::{Changed, Comparable};
 
+/// Assert that two values of a type have changed in the way described.
+#[macro_export]
+macro_rules! assert_changes {
+    ($left:expr, $right:expr, $expected:expr$(,)?) => {{
+        use comparable::Comparable;
+        assert_eq!($expected, $left.comparison(&$right));
+    }};
+}
+
 /// Assert that two values of a type have either not changed, or they have
 /// changed only to the extent described by the give change set. This allows
 /// tests to confirm that what they expected to see happened, and anything
@@ -40,12 +49,41 @@ pub use crate::types::{Changed, Comparable};
 /// ```ignore
 /// pretty_assertions::assert_eq!(expected, left.comparison(right))
 /// ```
-pub fn assert_changes<T: Comparable>(
-    left: &T,
-    right: &T,
-    expected: Changed<<T as Comparable>::Change>,
-) {
-    pretty_assertions::assert_eq!(expected, left.comparison(right))
+#[macro_export]
+macro_rules! pretty_assert_changes {
+    ($left:expr, $right:expr, $expected:expr$(,)?) => {{
+        use comparable::Comparable;
+        pretty_assertions::assert_eq!($expected, $left.comparison(&$right));
+    }};
+}
+
+/// Assert that two values of a type have changed in the way described,
+/// stopping at the first failure if this occurs in a proptest block.
+#[macro_export]
+macro_rules! prop_assert_changes {
+    ($left:expr, $right:expr, $expected:expr$(,)?) => {{
+        use comparable::Comparable;
+        proptest::prop_assert_eq!($expected, $left.comparison(&$right));
+    }};
+}
+
+/// Assert that two values of a type have changed in the way described,
+/// stopping at the first failure if this occurs in a proptest block.
+#[macro_export]
+macro_rules! prop_pretty_assert_changes {
+    ($left:expr, $right:expr, $expected:expr$(,)?) => {{
+        use comparable::Comparable;
+        let changes = $left.comparison(&$right);
+        if $expected != changes {
+            return Err(proptest::test_runner::TestCaseError::fail(format!(
+                "prop_assert_changes! failed: `(left == right)`\
+                 \n\
+                 \n{}\
+                 \n",
+                pretty_assertions::Comparison::new(&$expected, &changes)
+            )));
+        }
+    }};
 }
 
 // Re-export #[derive(Comparable)].

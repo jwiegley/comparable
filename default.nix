@@ -10,7 +10,7 @@
 
 with pkgs; rustPlatform.buildRustPackage rec {
   pname = "comparable";
-  version = "0.4.0";
+  version = "0.5.0";
 
   src = ./.;
 
@@ -21,8 +21,6 @@ with pkgs; rustPlatform.buildRustPackage rec {
   nativeBuildInputs = [ rls rustfmt clippy pkg-config cargo-expand ];
   buildInputs = [ openssl protobuf ]
     ++ (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security);
-
-  registry = "file://local-registry";
 
   RUSTC_BOOTSTRAP = 1;
 
