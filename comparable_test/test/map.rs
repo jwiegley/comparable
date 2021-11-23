@@ -22,7 +22,7 @@ impl HashMapBuilder {
     }
 
     fn create(self) -> HashMap<i32, i32> {
-        HashMap::from(self.elements.into_iter().collect())
+        self.elements.into_iter().collect()
     }
 }
 
@@ -61,7 +61,9 @@ fn test_hashmap() {
     );
     assert_changes!(
         &HashMap::new(),
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![
             MapChange::Added(0, 1),
             MapChange::Added(1, 2),
@@ -69,7 +71,9 @@ fn test_hashmap() {
         ]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         &HashMap::new(),
         Changed(vec![
             MapChange::Removed(0),
@@ -78,28 +82,48 @@ fn test_hashmap() {
         ]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![MapChange::Added(2, 3)]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![MapChange::Removed(2)]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![MapChange::Added(1, 2)]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
+        &vec![(0, 1 as i32), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![MapChange::Removed(1)]),
     );
     assert_changes!(
-        &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &HashMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 4), (2, 3)]
+            .into_iter()
+            .collect::<HashMap<_, _>>(),
         Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
     );
 }
@@ -113,7 +137,9 @@ fn test_btreemap() {
     );
     assert_changes!(
         &BTreeMap::new(),
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![
             MapChange::Added(0, 1),
             MapChange::Added(1, 2),
@@ -121,7 +147,9 @@ fn test_btreemap() {
         ]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         &BTreeMap::new(),
         Changed(vec![
             MapChange::Removed(0),
@@ -130,28 +158,48 @@ fn test_btreemap() {
         ]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![MapChange::Added(2, 3)]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![MapChange::Removed(2)]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![MapChange::Added(1, 2)]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &BTreeMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
+        &vec![(0, 1 as i32), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![MapChange::Removed(1)]),
     );
     assert_changes!(
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-        &BTreeMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
+        &vec![(0, 1 as i32), (1, 2), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
+        &vec![(0, 1 as i32), (1, 4), (2, 3)]
+            .into_iter()
+            .collect::<BTreeMap<_, _>>(),
         Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
     );
 }

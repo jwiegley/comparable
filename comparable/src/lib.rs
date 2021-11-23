@@ -201,23 +201,23 @@
 //! 
 //! // Sets
 //! assert_changes!(
-//!     &HashSet::from(vec![1 as i32, 2].into_iter().collect()),
-//!     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+//!     &vec![1 as i32, 2].into_iter().collect::<HashSet<_>>(),
+//!     &vec![1 as i32, 2, 3].into_iter().collect::<HashSet<_>>(),
 //!     Changed::Changed(vec![SetChange::Added(3)]),
 //! );
 //! assert_changes!(
-//!     &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
-//!     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
+//!     &vec![1 as i32, 3].into_iter().collect::<HashSet<_>>(),
+//!     &vec![1 as i32, 2, 3].into_iter().collect::<HashSet<_>>(),
 //!     Changed::Changed(vec![SetChange::Added(2)]),
 //! );
 //! assert_changes!(
-//!     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
-//!     &HashSet::from(vec![1 as i32, 3].into_iter().collect()),
+//!     &vec![1 as i32, 2, 3].into_iter().collect::<HashSet<_>>(),
+//!     &vec![1 as i32, 3].into_iter().collect::<HashSet<_>>(),
 //!     Changed::Changed(vec![SetChange::Removed(2)]),
 //! );
 //! assert_changes!(
-//!     &HashSet::from(vec![1 as i32, 2, 3].into_iter().collect()),
-//!     &HashSet::from(vec![1 as i32, 4, 3].into_iter().collect()),
+//!     &vec![1 as i32, 2, 3].into_iter().collect::<HashSet<_>>(),
+//!     &vec![1 as i32, 4, 3].into_iter().collect::<HashSet<_>>(),
 //!     Changed::Changed(vec![SetChange::Added(4), SetChange::Removed(2)]),
 //! );
 //! ```
@@ -274,28 +274,28 @@
 //! # use std::collections::HashMap;
 //! // HashMaps
 //! assert_changes!(
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+//!     &vec![(0, 1 as i32), (1, 2)].into_iter().collect::<HashMap<_, _>>(),
+//!     &vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
 //!     Changed::Changed(vec![MapChange::Added(2, 3)]),
 //! );
 //! assert_changes!(
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2)].into_iter().collect()),
+//!     &vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
+//!     &vec![(0, 1 as i32), (1, 2)].into_iter().collect::<HashMap<_, _>>(),
 //!     Changed::Changed(vec![MapChange::Removed(2)]),
 //! );
 //! assert_changes!(
-//!     &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
+//!     &vec![(0, 1 as i32), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
+//!     &vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
 //!     Changed::Changed(vec![MapChange::Added(1, 2)]),
 //! );
 //! assert_changes!(
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-//!     &HashMap::from(vec![(0, 1 as i32), (2, 3)].into_iter().collect()),
+//!     &vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
+//!     &vec![(0, 1 as i32), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
 //!     Changed::Changed(vec![MapChange::Removed(1)]),
 //! );
 //! assert_changes!(
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect()),
-//!     &HashMap::from(vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect()),
+//!     &vec![(0, 1 as i32), (1, 2), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
+//!     &vec![(0, 1 as i32), (1, 4), (2, 3)].into_iter().collect::<HashMap<_, _>>(),
 //!     Changed::Changed(vec![MapChange::Changed(1, I32Change(2, 4))]),
 //! );
 //! ```

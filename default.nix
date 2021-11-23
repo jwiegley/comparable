@@ -1,5 +1,5 @@
-{ rev    ? "8e1eab9eae4278c9bb1dcae426848a581943db5a"
-, sha256 ? "0jf4rccc0z9in1iahw13i5wl93gbp1x6mkjd3qivjg97ms9qw3l0"
+{ rev    ? "98747f27ecfee70c8c97b195cbb94df80a074dda"
+, sha256 ? "04ss525ns5qqlggrdhvc6y4hqmshylda9yd0y99ddliyn15wmf27"
 , pkgs   ? import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
     inherit sha256; }) {
@@ -10,11 +10,11 @@
 
 with pkgs; rustPlatform.buildRustPackage rec {
   pname = "comparable";
-  version = "0.5.0";
+  version = "0.5.1";
 
   src = ./.;
 
-  cargoSha256 = "0m3b32zcby7l6j8x0p6g32afpknjscx826apbh1jk8r2pinjcmn8";
+  cargoSha256 = "sha256-f/s/8gT3/8a/kztn2Dmbl/rCmwYfQqddH3Q9u2/+7JE=";
 
   cargoBuildFlags = [];
 
