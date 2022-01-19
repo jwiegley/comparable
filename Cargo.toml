@@ -3,5 +3,6 @@
 members = [
   "comparable",
   "comparable_derive",
+  "comparable_helper",
   "comparable_test",
 ]
