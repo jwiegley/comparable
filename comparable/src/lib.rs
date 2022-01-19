@@ -899,6 +899,8 @@ pub mod map;
 #[doc(hidden)]
 pub mod opt;
 #[doc(hidden)]
+pub mod path;
+#[doc(hidden)]
 pub mod scalar;
 #[doc(hidden)]
 pub mod set;
@@ -917,6 +919,8 @@ pub use crate::boxes::*;
 pub use crate::map::*;
 #[doc(hidden)]
 pub use crate::opt::*;
+#[doc(hidden)]
+pub use crate::path::*;
 #[doc(hidden)]
 pub use crate::scalar::*;
 #[doc(hidden)]
