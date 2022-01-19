@@ -889,6 +889,8 @@
 //!
 //! Unions cannot derive [`Comparable`] instances at the present time.
 #[doc(hidden)]
+pub mod array;
+#[doc(hidden)]
 pub mod boxes;
 #[doc(hidden)]
 pub mod empty;
@@ -908,6 +910,8 @@ pub mod tuple;
 pub mod types;
 
 #[doc(hidden)]
+pub use crate::array::*;
+#[doc(hidden)]
 pub use crate::boxes::*;
 #[doc(hidden)]
 pub use crate::map::*;
@@ -919,6 +923,8 @@ pub use crate::scalar::*;
 pub use crate::set::*;
 #[doc(hidden)]
 pub use crate::string::*;
+#[doc(hidden)]
+pub use crate::tuple::*;
 
 pub use crate::types::{Changed, Comparable};
 
