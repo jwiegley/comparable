@@ -218,21 +218,17 @@ pub fn create_change_type_for_enums_with_helpers(
 
 #[derive(Clone)]
 struct FieldDetails {
-    ident: Option<syn::Ident>,
-    ty: syn::Type,
     self_var: syn::Ident,
     other_var: syn::Ident,
     changes_var: syn::Ident,
 }
 
 impl FieldDetails {
-    fn from(index: usize, field: &syn::Field) -> Self {
+    fn from(index: usize) -> Self {
         let self_var = format_ident!("self_var{}", index);
         let other_var = format_ident!("other_var{}", index);
         let changes_var = format_ident!("changes_var{}", index);
         FieldDetails {
-            ident: field.ident.clone(),
-            ty: field.ty.clone(),
             self_var,
             other_var,
             changes_var,
@@ -324,7 +320,7 @@ impl VariantDetails {
                             .as_ref()
                             .expect("Unexpected unnamed field")
                             .clone(),
-                        FieldDetails::from(r.index, r.field),
+                        FieldDetails::from(r.index),
                     )
                 })
                 .into_iter()
@@ -332,7 +328,7 @@ impl VariantDetails {
             ),
             syn::Fields::Unnamed(unnamed) => VariantFields::Unnamed(
                 map_fields(false, unnamed.unnamed.iter(), |r| {
-                    FieldDetails::from(r.index, r.field)
+                    FieldDetails::from(r.index)
                 })
                 .into_iter()
                 .collect(),
