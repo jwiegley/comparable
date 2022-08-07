@@ -1,5 +1,5 @@
-{ rev    ? "98747f27ecfee70c8c97b195cbb94df80a074dda"
-, sha256 ? "04ss525ns5qqlggrdhvc6y4hqmshylda9yd0y99ddliyn15wmf27"
+{ rev    ? "8f73de28e63988da02426ebb17209e3ae07f103b"
+, sha256 ? "1mvq8wxdns802b1gvjvalbvdsp3xjgm370bimdd93mwpspz0250p"
 , pkgs   ? import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
     inherit sha256; }) {
