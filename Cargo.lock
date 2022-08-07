@@ -55,12 +55,23 @@ name = "comparable"
 version = "0.5.1"
 dependencies = [
  "comparable_derive",
+ "comparable_helper",
  "pretty_assertions",
  "serde",
 ]
 
 [[package]]
 name = "comparable_derive"
+version = "0.5.1"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "comparable_helper"
 version = "0.5.1"
 dependencies = [
  "convert_case",
