@@ -1,10 +1,7 @@
 use crate::types::{Changed, Comparable};
 
-#[derive(
-    PartialEq,
-    Debug, // , serde::Serialize, serde::Deserialize
-)]
-
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(PartialEq, Debug)]
 pub struct StringChange(pub String, pub String);
 
 impl Comparable for String {

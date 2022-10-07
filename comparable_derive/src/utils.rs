@@ -309,7 +309,7 @@ pub fn generate_type_definition(
         }
     };
     quote! {
-        // #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
         #[derive(PartialEq, Debug)]
         #visibility #keyword #type_name#body
     }
