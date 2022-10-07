@@ -308,8 +308,15 @@ pub fn generate_type_definition(
             panic!("comparable_derive::generate_type_definition not implemented for unions")
         }
     };
+    let derive_serde = if cfg!(feature = "serde") {
+        quote! {
+            #[derive(serde::Serialize, serde::Deserialize)]
+        }
+    } else {
+        quote! {}
+    };
     quote! {
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #derive_serde
         #[derive(PartialEq, Debug)]
         #visibility #keyword #type_name#body
     }
