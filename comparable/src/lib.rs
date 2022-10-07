@@ -1,3 +1,5 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
+
 //! The `comparable` crate defines the trait [`Comparable`], along with a derive
 //! macro for auto-generating instances of this trait for most data types.
 //! Primarily the purpose of this trait is to offer a method,
