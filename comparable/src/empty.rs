@@ -1,13 +1,13 @@
 use crate::types::{Changed, Comparable};
 
 impl<T> Comparable for std::iter::Empty<T> {
-    type Desc = ();
+	type Desc = ();
 
-    fn describe(&self) -> Self::Desc {}
+	fn describe(&self) -> Self::Desc {}
 
-    type Change = ();
+	type Change = ();
 
-    fn comparison(&self, _other: &Self) -> Changed<Self::Change> {
-        Changed::Unchanged
-    }
+	fn comparison(&self, _other: &Self) -> Changed<Self::Change> {
+		Changed::Unchanged
+	}
 }

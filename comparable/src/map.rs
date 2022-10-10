@@ -7,77 +7,68 @@ use crate::types::{Changed, Comparable};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Eq, PartialEq, Debug)]
 pub enum MapChange<Key, Desc, Change> {
-    Added(Key, Desc),
-    Changed(Key, Change),
-    Removed(Key),
+	Added(Key, Desc),
+	Changed(Key, Change),
+	Removed(Key),
 }
 
 impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, Value> {
-    type Desc = BTreeMap<Key, Value::Desc>;
+	type Desc = BTreeMap<Key, Value::Desc>;
 
-    fn describe(&self) -> Self::Desc {
-        self.iter()
-            .map(|(k, v)| (k.clone(), v.describe()))
-            .collect()
-    }
+	fn describe(&self) -> Self::Desc {
+		self.iter().map(|(k, v)| (k.clone(), v.describe())).collect()
+	}
 
-    type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
+	type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
-        let mut changes = Vec::new();
-        changes.append(
-            &mut other
-                .iter()
-                .flat_map(|(k, v)| {
-                    if let Some(vo) = self.get(k) {
-                        vo.comparison(v)
-                            .map(|changes| MapChange::Changed(k.clone(), changes))
-                    } else {
-                        Changed::Changed(MapChange::Added(k.clone(), v.describe()))
-                    }
-                })
-                .collect(),
-        );
-        changes.append(
-            &mut self
-                .iter()
-                .flat_map(|(k, _v)| {
-                    if !other.contains_key(k) {
-                        Changed::Changed(MapChange::Removed(k.clone()))
-                    } else {
-                        Changed::Unchanged
-                    }
-                })
-                .collect(),
-        );
-        if changes.is_empty() {
-            Changed::Unchanged
-        } else {
-            Changed::Changed(changes)
-        }
-    }
+	fn comparison(&self, other: &Self) -> Changed<Self::Change> {
+		let mut changes = Vec::new();
+		changes.append(
+			&mut other
+				.iter()
+				.flat_map(|(k, v)| {
+					if let Some(vo) = self.get(k) {
+						vo.comparison(v).map(|changes| MapChange::Changed(k.clone(), changes))
+					} else {
+						Changed::Changed(MapChange::Added(k.clone(), v.describe()))
+					}
+				})
+				.collect(),
+		);
+		changes.append(
+			&mut self
+				.iter()
+				.flat_map(|(k, _v)| {
+					if !other.contains_key(k) {
+						Changed::Changed(MapChange::Removed(k.clone()))
+					} else {
+						Changed::Unchanged
+					}
+				})
+				.collect(),
+		);
+		if changes.is_empty() {
+			Changed::Unchanged
+		} else {
+			Changed::Changed(changes)
+		}
+	}
 }
 
 fn to_btreemap<K: Clone + Ord, V>(map: &HashMap<K, V>) -> BTreeMap<K, &V> {
-    map.iter()
-        .map(|(k, v)| (k.clone(), v))
-        .collect::<BTreeMap<K, &V>>()
-        .into_iter()
-        .collect()
+	map.iter().map(|(k, v)| (k.clone(), v)).collect::<BTreeMap<K, &V>>().into_iter().collect()
 }
 
 impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for HashMap<Key, Value> {
-    type Desc = BTreeMap<Key, Value::Desc>;
+	type Desc = BTreeMap<Key, Value::Desc>;
 
-    fn describe(&self) -> Self::Desc {
-        self.iter()
-            .map(|(k, v)| (k.clone(), v.describe()))
-            .collect()
-    }
+	fn describe(&self) -> Self::Desc {
+		self.iter().map(|(k, v)| (k.clone(), v.describe())).collect()
+	}
 
-    type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
+	type Change = Vec<MapChange<Key, Value::Desc, Value::Change>>;
 
-    fn comparison(&self, other: &Self) -> Changed<Self::Change> {
-        to_btreemap(self).comparison(&to_btreemap(other))
-    }
+	fn comparison(&self, other: &Self) -> Changed<Self::Change> {
+		to_btreemap(self).comparison(&to_btreemap(other))
+	}
 }
