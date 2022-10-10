@@ -1,5 +1,5 @@
-{ rev    ? "8f73de28e63988da02426ebb17209e3ae07f103b"
-, sha256 ? "1mvq8wxdns802b1gvjvalbvdsp3xjgm370bimdd93mwpspz0250p"
+{ rev    ? "14ccaaedd95a488dd7ae142757884d8e125b3363"
+, sha256 ? "1dvdpwdzkzr9pkvb7pby0aajgx7qv34qaxb1bjxx4dxi3aip9q5q"
 , pkgs   ? import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
     inherit sha256; }) {
@@ -18,7 +18,7 @@ with pkgs; rustPlatform.buildRustPackage rec {
 
   cargoBuildFlags = [];
 
-  nativeBuildInputs = [ rustfmt clippy pkg-config cargo-expand ];
+  nativeBuildInputs = [ rust-analyzer rustfmt clippy pkg-config cargo-expand ];
   buildInputs = [ openssl protobuf ]
     ++ (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security);
 
