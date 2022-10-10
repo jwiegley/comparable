@@ -264,7 +264,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 	};
 	quote! {
 		#derive_serde
-		#[derive(Eq, PartialEq, Debug)]
+		#[derive(PartialEq, Debug)]
 		#visibility #keyword #type_name#body
 	}
 }

@@ -3,7 +3,7 @@
 use crate::types::{Changed, Comparable};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum OptionChange<Desc, Change> {
 	BothSome(Change),
 	Different(Desc, Desc),

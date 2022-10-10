@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Changed<T> {
 	Unchanged,
 	Changed(T),

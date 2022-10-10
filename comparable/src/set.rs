@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use crate::types::{Changed, Comparable};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum VecChange<Desc, Change> {
 	Added(usize, Desc),
 	Changed(usize, Change),
@@ -46,7 +46,7 @@ impl<Value: PartialEq + Comparable> Comparable for Vec<Value> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum SetChange<Desc> {
 	Added(Desc),
 	Removed(Desc),

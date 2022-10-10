@@ -17,7 +17,7 @@ impl Comparable for () {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct BoolChange(pub bool, pub bool);
 
 impl Comparable for bool {
@@ -39,7 +39,7 @@ impl Comparable for bool {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct U8Change(pub u8, pub u8);
 
 impl Comparable for u8 {
@@ -61,7 +61,7 @@ impl Comparable for u8 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct I8Change(pub i8, pub i8);
 
 impl Comparable for i8 {
@@ -83,7 +83,7 @@ impl Comparable for i8 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 
 pub struct U16Change(pub u16, pub u16);
 
@@ -106,7 +106,7 @@ impl Comparable for u16 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct I16Change(pub i16, pub i16);
 
 impl Comparable for i16 {
@@ -128,7 +128,7 @@ impl Comparable for i16 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct U32Change(pub u32, pub u32);
 
 impl Comparable for u32 {
@@ -150,7 +150,7 @@ impl Comparable for u32 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct I32Change(pub i32, pub i32);
 
 impl Comparable for i32 {
@@ -172,7 +172,7 @@ impl Comparable for i32 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct U64Change(pub u64, pub u64);
 
 impl Comparable for u64 {
@@ -194,7 +194,7 @@ impl Comparable for u64 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 
 pub struct I64Change(pub i64, pub i64);
 
@@ -217,7 +217,7 @@ impl Comparable for i64 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct UsizeChange(pub usize, pub usize);
 
 impl Comparable for usize {
@@ -239,7 +239,7 @@ impl Comparable for usize {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct IsizeChange(pub isize, pub isize);
 
 impl Comparable for isize {
@@ -307,7 +307,7 @@ impl Comparable for f64 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct CharChange(pub char, pub char);
 
 impl Comparable for char {

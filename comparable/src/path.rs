@@ -1,7 +1,7 @@
 use crate::types::{Changed, Comparable};
 use std::path::{Path, PathBuf};
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct PathBufChange(pub PathBuf, pub PathBuf);
 
 impl Comparable for PathBuf {
