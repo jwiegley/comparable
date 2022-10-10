@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use crate::types::{Changed, Comparable};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum VecChange<Desc, Change> {
     Added(usize, Desc),
     Changed(usize, Change),
@@ -46,7 +46,7 @@ impl<Value: PartialEq + Comparable> Comparable for Vec<Value> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum SetChange<Desc> {
     Added(Desc),
     Removed(Desc),
@@ -66,27 +66,25 @@ impl<Value: Ord + Comparable> Comparable for BTreeSet<Value> {
         changes.append(
             &mut other
                 .iter()
-                .map(|v| {
+                .flat_map(|v| {
                     if self.contains(v) {
                         Changed::Unchanged
                     } else {
                         Changed::Changed(SetChange::Added(v.describe()))
                     }
                 })
-                .flatten()
                 .collect(),
         );
         changes.append(
             &mut self
                 .iter()
-                .map(|v| {
+                .flat_map(|v| {
                     if !other.contains(v) {
                         Changed::Changed(SetChange::Removed(v.describe()))
                     } else {
                         Changed::Unchanged
                     }
                 })
-                .flatten()
                 .collect(),
         );
         if changes.is_empty() {
@@ -113,14 +111,13 @@ impl<Value: std::hash::Hash + Ord + Comparable> Comparable for HashSet<Value> {
         changes.append(
             &mut others
                 .iter()
-                .map(|v| {
+                .flat_map(|v| {
                     if self.contains(v) {
                         Changed::Unchanged
                     } else {
                         Changed::Changed(SetChange::Added(v.describe()))
                     }
                 })
-                .flatten()
                 .collect(),
         );
         let mut selfs = self.iter().collect::<Vec<&Value>>();
@@ -128,14 +125,13 @@ impl<Value: std::hash::Hash + Ord + Comparable> Comparable for HashSet<Value> {
         changes.append(
             &mut selfs
                 .iter()
-                .map(|v| {
+                .flat_map(|v| {
                     if !other.contains(v) {
                         Changed::Changed(SetChange::Removed(v.describe()))
                     } else {
                         Changed::Unchanged
                     }
                 })
-                .flatten()
                 .collect(),
         );
         if changes.is_empty() {

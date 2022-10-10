@@ -52,7 +52,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "comparable"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "comparable_derive",
  "comparable_helper",
@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "comparable_derive"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "comparable_helper"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -82,7 +82,7 @@ dependencies = [
 
 [[package]]
 name = "comparable_test"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "comparable",
  "pretty_assertions",

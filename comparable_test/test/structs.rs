@@ -190,7 +190,7 @@ fn test_struct_1_named_field_not_ignored() {
 
 #[test]
 fn test_struct_1_named_field_self_describing() {
-    #[derive(Comparable, Clone, PartialEq, Debug)]
+    #[derive(Comparable, Clone, Eq, PartialEq, Debug)]
     #[self_describing]
     pub struct ScalarNamedVecNotIgnored {
         pub some_ints: Vec<u8>,
@@ -211,7 +211,7 @@ fn test_struct_1_named_field_self_describing() {
 
 #[test]
 fn test_struct_1_named_field_comparable_change_suffix() {
-    #[derive(Comparable, Clone, PartialEq, Debug)]
+    #[derive(Comparable, Clone, Eq, PartialEq, Debug)]
     #[comparable_change_suffix(Mutated)]
     pub struct ScalarNamedVecNotIgnored {
         pub some_ints: Vec<u8>,

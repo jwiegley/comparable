@@ -10,15 +10,15 @@
 
 with pkgs; rustPlatform.buildRustPackage rec {
   pname = "comparable";
-  version = "0.5.2";
+  version = "0.5.3";
 
   src = ./.;
 
-  cargoSha256 = "sha256-ZWD/IRbcsqoSxd0rIpOksdnHjZSEjh7h/tQc7Hm2baA=";
+  cargoSha256 = "sha256-6Cf/4pF1TXzXMGT54xKfVb3lQ4d58FDVdK6C0cZc97g=";
 
   cargoBuildFlags = [];
 
-  nativeBuildInputs = [ rls rustfmt clippy pkg-config cargo-expand ];
+  nativeBuildInputs = [ rustfmt clippy pkg-config cargo-expand ];
   buildInputs = [ openssl protobuf ]
     ++ (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security);
 

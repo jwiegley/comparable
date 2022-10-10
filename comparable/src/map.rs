@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use crate::types::{Changed, Comparable};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum MapChange<Key, Desc, Change> {
     Added(Key, Desc),
     Changed(Key, Change),
@@ -28,7 +28,7 @@ impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, V
         changes.append(
             &mut other
                 .iter()
-                .map(|(k, v)| {
+                .flat_map(|(k, v)| {
                     if let Some(vo) = self.get(k) {
                         vo.comparison(v)
                             .map(|changes| MapChange::Changed(k.clone(), changes))
@@ -36,20 +36,18 @@ impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, V
                         Changed::Changed(MapChange::Added(k.clone(), v.describe()))
                     }
                 })
-                .flatten()
                 .collect(),
         );
         changes.append(
             &mut self
                 .iter()
-                .map(|(k, _v)| {
+                .flat_map(|(k, _v)| {
                     if !other.contains_key(k) {
                         Changed::Changed(MapChange::Removed(k.clone()))
                     } else {
                         Changed::Unchanged
                     }
                 })
-                .flatten()
                 .collect(),
         );
         if changes.is_empty() {

@@ -10,6 +10,6 @@ impl<T: Comparable> Comparable for Box<T> {
     type Change = T::Change;
 
     fn comparison(&self, other: &Self) -> Changed<Self::Change> {
-        self.as_ref().comparison(&*other)
+        self.as_ref().comparison(&**other)
     }
 }

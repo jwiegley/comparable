@@ -317,7 +317,7 @@ pub fn generate_type_definition(
     };
     quote! {
         #derive_serde
-        #[derive(PartialEq, Debug)]
+        #[derive(Eq, PartialEq, Debug)]
         #visibility #keyword #type_name#body
     }
 }

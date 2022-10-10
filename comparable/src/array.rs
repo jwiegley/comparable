@@ -10,7 +10,7 @@ impl<T: Comparable, const N: usize> Comparable for [T; N] {
     type Desc = [T::Desc; N];
 
     fn describe(&self) -> Self::Desc {
-        let v = self.into_iter().map(|v| v.describe()).collect::<Vec<_>>();
+        let v = self.iter().map(|v| v.describe()).collect::<Vec<_>>();
         convert_vec_to_array(v)
     }
 
