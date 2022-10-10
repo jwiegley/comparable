@@ -31,3 +31,4 @@ features = ["derive"]
 [features]
 # Provide derive(Comparable) macro.
 derive = ["comparable_derive"]
+serde = ["comparable_derive?/serde"]

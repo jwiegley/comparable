@@ -4,10 +4,8 @@ use std::fmt::Debug;
 
 use crate::types::{Changed, Comparable};
 
-#[derive(
-    PartialEq,
-    Debug, // , serde::Serialize, serde::Deserialize
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(PartialEq, Debug)]
 pub enum MapChange<Key, Desc, Change> {
     Added(Key, Desc),
     Changed(Key, Change),
