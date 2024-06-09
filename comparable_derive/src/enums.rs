@@ -84,7 +84,6 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
 			})
 			.into_iter()
 			.flatten()
-			.into_iter()
 			.chain(if en.variants.len() < 2 {
 				vec![]
 			} else {
@@ -155,16 +154,13 @@ pub fn create_change_type_for_enums_with_helpers(
 								helper_structs_ref.push((fields_change_name.clone(), fields_change_struct));
 
 								syn::Fields::Unnamed(syn::FieldsUnnamed {
-									unnamed: FromIterator::from_iter(
-										vec![syn::Field {
-											ident: None,
-											ty: vec_type(&ident_to_type(&fields_change_name)),
-											attrs: Default::default(),
-											vis: syn::Visibility::Inherited,
-											colon_token: Default::default(),
-										}]
-										.into_iter(),
-									),
+									unnamed: FromIterator::from_iter(vec![syn::Field {
+										ident: None,
+										ty: vec_type(&ident_to_type(&fields_change_name)),
+										attrs: Default::default(),
+										vis: syn::Visibility::Inherited,
+										colon_token: Default::default(),
+									}]),
 									paren_token: Default::default(),
 								})
 							}
@@ -175,7 +171,6 @@ pub fn create_change_type_for_enums_with_helpers(
 			})
 			.into_iter()
 			.flatten()
-			.into_iter()
 			.chain(if en.variants.len() < 2 {
 				vec![]
 			} else {

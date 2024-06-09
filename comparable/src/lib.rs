@@ -914,10 +914,6 @@ pub mod tuple;
 pub mod types;
 
 #[doc(hidden)]
-pub use crate::array::*;
-#[doc(hidden)]
-pub use crate::boxes::*;
-#[doc(hidden)]
 pub use crate::map::*;
 #[doc(hidden)]
 pub use crate::opt::*;
@@ -929,8 +925,6 @@ pub use crate::scalar::*;
 pub use crate::set::*;
 #[doc(hidden)]
 pub use crate::string::*;
-#[doc(hidden)]
-pub use crate::tuple::*;
 
 pub use crate::types::{Changed, Comparable};
 
