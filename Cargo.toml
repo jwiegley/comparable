@@ -15,3 +15,12 @@ exclude = ["fuzz"]
 # does not apply this table to dependencies, nor to downstream users of the
 # published crates.
 warnings = "deny"
+
+[workspace.package]
+version = "0.5.6"
+
+[workspace.dependencies]
+comparable = { version = "0.5.6", path = "comparable" }
+comparable_derive = { version = "0.5.6", path = "comparable_derive" }
+comparable_helper = { version = "0.5.6", path = "comparable_helper" }
+comparable_test = { version = "0.5.6", path = "comparable_test" }
