@@ -6,3 +6,12 @@ members = [
   "comparable_helper",
   "comparable_test",
 ]
+
+[workspace.package]
+version = "0.5.5"
+
+[workspace.dependencies]
+comparable = { version = "0.5.5", path = "comparable" }
+comparable_derive = { version = "0.5.5", path = "comparable_derive" }
+comparable_helper = { version = "0.5.5", path = "comparable_helper" }
+comparable_test = { version = "0.5.5", path = "comparable_test" }
