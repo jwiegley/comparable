@@ -58,6 +58,7 @@ impl Definition {
 				..r.field.clone()
 			}),
 			&inputs.input.generics,
+			&inputs.attrs.comparable_attributes,
 		);
 		let (_impl_generics, ty_generics, _where_clause) = inputs.input.generics.split_for_impl();
 		Self {
@@ -128,10 +129,21 @@ impl Definition {
 		let change_type =
 			Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data, &inputs.input.generics)
 				.map(|(ch_ty, helper_tys)| {
-					let ch_def =
-						generate_type_definition(&inputs.visibility, &change_name, &ch_ty, &inputs.input.generics);
+					let ch_def = generate_type_definition(
+						&inputs.visibility,
+						&change_name,
+						&ch_ty,
+						&inputs.input.generics,
+						&inputs.attrs.comparable_attributes,
+					);
 					let helper_defs = helper_tys.iter().map(|(name, ty)| {
-						generate_type_definition(&inputs.visibility, name, ty, &inputs.input.generics)
+						generate_type_definition(
+							&inputs.visibility,
+							name,
+							ty,
+							&inputs.input.generics,
+							&inputs.attrs.comparable_attributes,
+						)
 					});
 					quote! {
 						#ch_def

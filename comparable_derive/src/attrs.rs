@@ -1,6 +1,6 @@
 use quote::format_ident;
 
-use crate::utils::has_attr;
+use crate::utils::{has_attr, has_attrs};
 
 pub struct Attributes {
 	pub describe_type: Option<syn::Type>,
@@ -13,6 +13,7 @@ pub struct Attributes {
 	pub comparable_private: bool,
 	pub comparable_desc_suffix: syn::Ident,
 	pub comparable_change_suffix: syn::Ident,
+	pub comparable_attributes: Vec<proc_macro2::TokenStream>,
 }
 
 impl Attributes {
@@ -34,6 +35,11 @@ impl Attributes {
 
 			comparable_desc_suffix: attr_to_ident(attrs, "comparable_desc_suffix", "Desc"),
 			comparable_change_suffix: attr_to_ident(attrs, "comparable_change_suffix", "Change"),
+
+			comparable_attributes: has_attrs(attrs, "comparable_attribute")
+				.into_iter()
+				.flat_map(syn::Attribute::parse_args)
+				.collect(),
 		}
 	}
 }
