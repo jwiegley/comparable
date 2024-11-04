@@ -57,6 +57,7 @@ impl Definition {
 				ty: Self::assoc_type(&r.field.ty, "Desc"),
 				..r.field.clone()
 			}),
+			&inputs.attrs.comparable_attributes,
 		);
 		Self {
 			ty: Some(
@@ -125,9 +126,15 @@ impl Definition {
 		let change_name = format_ident!("{}{}", type_name, inputs.attrs.comparable_change_suffix);
 		let change_type = Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data).map(
 			|(ch_ty, helper_tys)| {
-				let ch_def = generate_type_definition(&inputs.visibility, &change_name, &ch_ty);
-				let helper_defs =
-					helper_tys.iter().map(|(name, ty)| generate_type_definition(&inputs.visibility, name, ty));
+				let ch_def = generate_type_definition(
+					&inputs.visibility,
+					&change_name,
+					&ch_ty,
+					&inputs.attrs.comparable_attributes,
+				);
+				let helper_defs = helper_tys.iter().map(|(name, ty)| {
+					generate_type_definition(&inputs.visibility, name, ty, &inputs.attrs.comparable_attributes)
+				});
 				quote! {
 					#ch_def
 					#(#helper_defs)*

@@ -23,6 +23,10 @@ pub fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a 
 	attrs.iter().find(|attr| attr.path.is_ident(attr_name))
 }
 
+pub fn has_attrs<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Vec<&'a syn::Attribute> {
+	attrs.iter().filter(|attr| attr.path.is_ident(attr_name)).collect()
+}
+
 #[allow(dead_code)]
 pub fn data_from_variant(variant: &syn::Variant) -> syn::Data {
 	syn::Data::Struct(syn::DataStruct {
@@ -182,7 +186,12 @@ fn parse_synthetics(tokens: &TokenStream) -> Result<BTreeMap<syn::Ident, syn::Ex
 		.collect())
 }
 
-pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::Ident, data: &syn::Data) -> TokenStream {
+pub fn generate_type_definition(
+	visibility: &syn::Visibility,
+	type_name: &syn::Ident,
+	data: &syn::Data,
+	attributes: &[TokenStream],
+) -> TokenStream {
 	let (keyword, body) = match data {
 		syn::Data::Struct(st) => (
 			quote!(struct),
@@ -265,6 +274,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 	quote! {
 		#derive_serde
 		#[derive(PartialEq, Debug)]
+	  #(#[#attributes])*
 		#visibility #keyword #type_name#body
 	}
 }
