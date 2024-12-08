@@ -17,7 +17,16 @@ pub fn generate_describe_body_for_enums(
 		match &variant.fields {
 			syn::Fields::Named(named) => {
 				let (field_indices, field_names): (Vec<syn::Ident>, Vec<syn::Ident>) =
-					map_fields(false, named.named.iter(), |r| {
+					map_fields(false, named.named.iter(), false, |r| {
+						(
+							format_ident!("var{}", r.index),
+							r.field.ident.as_ref().expect("Found unnamed field in named struct").clone(),
+						)
+					})
+					.into_iter()
+					.unzip();
+				let (field_indices_without_ignored, field_names_without_ignored): (Vec<syn::Ident>, Vec<syn::Ident>) =
+					map_fields(false, named.named.iter(), true, |r| {
 						(
 							format_ident!("var{}", r.index),
 							r.field.ident.as_ref().expect("Found unnamed field in named struct").clone(),
@@ -27,14 +36,17 @@ pub fn generate_describe_body_for_enums(
 					.unzip();
 				quote! {
 					#type_name::#variant_name { #(#field_names: #field_indices),* } =>
-					#desc_name::#variant_name { #(#field_names: #field_indices.describe()),* }
+					#desc_name::#variant_name { #(#field_names_without_ignored: #field_indices_without_ignored.describe()),* }
 				}
 			}
 			syn::Fields::Unnamed(unnamed) => {
-				let vars = map_fields(false, unnamed.unnamed.iter(), |r| format_ident!("var{}", r.index));
+				let vars = map_fields(false, unnamed.unnamed.iter(), false, |r| format_ident!("var{}", r.index));
+				let vars_without_ignored: Vec<syn::Ident> =
+					map_fields(false, unnamed.unnamed.iter(), true, |r| format_ident!("var{}", r.index));
+
 				quote! {
 					#type_name::#variant_name(#(#vars),*) =>
-					#desc_name::#variant_name(#(#vars.describe()),*)
+					#desc_name::#variant_name(#(#vars_without_ignored.describe()),*)
 				}
 			}
 			syn::Fields::Unit => {
@@ -59,25 +71,24 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum) 
 	syn::Data::Enum(syn::DataEnum {
 		variants: FromIterator::from_iter(
 			map_variants(en.variants.iter(), |variant| {
-				if variant.fields.is_empty() {
+				let many_fields = variant.fields.len() > 1;
+				let mapped_fields = map_on_fields(false, &variant.fields, |r| syn::Field {
+					ty: {
+						let change_type = Definition::assoc_type(&r.field.ty, "Change");
+						if many_fields {
+							Definition::changed_type(&change_type)
+						} else {
+							change_type
+						}
+					},
+					..r.field.clone()
+				});
+				if mapped_fields.is_empty() {
 					None
 				} else {
 					Some(syn::Variant {
 						ident: format_ident!("Both{}", &variant.ident),
-						fields: {
-							let many_fields = variant.fields.len() > 1;
-							map_on_fields(false, &variant.fields, |r| syn::Field {
-								ty: {
-									let change_type = Definition::assoc_type(&r.field.ty, "Change");
-									if many_fields {
-										Definition::changed_type(&change_type)
-									} else {
-										change_type
-									}
-								},
-								..r.field.clone()
-							})
-						},
+						fields: { mapped_fields },
 						..variant.clone()
 					})
 				}
@@ -204,14 +215,15 @@ struct FieldDetails {
 	self_var: syn::Ident,
 	other_var: syn::Ident,
 	changes_var: syn::Ident,
+	is_ignored: bool,
 }
 
 impl FieldDetails {
-	fn from(index: usize) -> Self {
+	fn from(index: usize, is_ignored: bool) -> Self {
 		let self_var = format_ident!("self_var{}", index);
 		let other_var = format_ident!("other_var{}", index);
 		let changes_var = format_ident!("changes_var{}", index);
-		FieldDetails { self_var, other_var, changes_var }
+		FieldDetails { self_var, other_var, changes_var, is_ignored }
 	}
 }
 
@@ -225,7 +237,16 @@ enum VariantFields {
 impl VariantFields {
 	fn field_names(&self) -> Option<Vec<syn::Ident>> {
 		match self {
-			VariantFields::Named(m) => Some(m.iter().map(|(k, _)| k.clone()).collect()),
+			VariantFields::Named(m) => Some(m.iter().filter_map(|(k, _)| Some(k.clone())).collect()),
+			_ => None,
+		}
+	}
+
+	fn field_names_filtered(&self) -> Option<Vec<syn::Ident>> {
+		match self {
+			VariantFields::Named(m) => {
+				Some(m.iter().filter_map(|(k, l)| if !l.is_ignored { Some(k.clone()) } else { None }).collect())
+			}
 			_ => None,
 		}
 	}
@@ -242,12 +263,29 @@ impl VariantFields {
 		self.field_details().iter().map(|d| d.self_var.clone()).collect()
 	}
 
+	fn self_vars_filtered(&self) -> Vec<syn::Ident> {
+		self.field_details()
+			.iter()
+			.filter_map(|d| if !d.is_ignored { Some(d.self_var.clone()) } else { None })
+			.collect()
+	}
+
 	fn other_vars(&self) -> Vec<syn::Ident> {
 		self.field_details().iter().map(|d| d.other_var.clone()).collect()
 	}
 
+	fn other_vars_filtered(&self) -> Vec<syn::Ident> {
+		self.field_details()
+			.iter()
+			.filter_map(|d| if !d.is_ignored { Some(d.other_var.clone()) } else { None })
+			.collect()
+	}
+
 	fn changes_vars(&self) -> Vec<syn::Ident> {
-		self.field_details().iter().map(|d| d.changes_var.clone()).collect()
+		self.field_details()
+			.iter()
+			.filter_map(|d| if !d.is_ignored { Some(d.changes_var.clone()) } else { None })
+			.collect()
 	}
 
 	pub fn map_basic_field_info<R>(&self, mut f: impl FnMut(usize, &Option<syn::Ident>) -> R) -> Vec<R> {
@@ -274,14 +312,21 @@ impl VariantDetails {
 	fn from(variant: &syn::Variant) -> Self {
 		let fields = match &variant.fields {
 			syn::Fields::Named(named) => VariantFields::Named(
-				map_fields(false, named.named.iter(), |r| {
-					(r.field.ident.as_ref().expect("Unexpected unnamed field").clone(), FieldDetails::from(r.index))
+				map_fields(false, named.named.iter(), false, |r| {
+					(
+						r.field.ident.as_ref().expect("Unexpected unnamed field").clone(),
+						FieldDetails::from(r.index, has_attr(&r.field.attrs, "comparable_ignore").is_some()),
+					)
 				})
 				.into_iter()
 				.collect(),
 			),
 			syn::Fields::Unnamed(unnamed) => VariantFields::Unnamed(
-				map_fields(false, unnamed.unnamed.iter(), |r| FieldDetails::from(r.index)).into_iter().collect(),
+				map_fields(false, unnamed.unnamed.iter(), false, |r| {
+					FieldDetails::from(r.index, has_attr(&r.field.attrs, "comparable_ignore").is_some())
+				})
+				.into_iter()
+				.collect(),
 			),
 			syn::Fields::Unit => VariantFields::Unit,
 		};
@@ -298,12 +343,14 @@ impl VariantDetails {
 				fields_assignment: quote!(),
 				match_branch: Default::default(),
 			}
-		} else if let Some(fields_names) = fields.field_names() {
+		} else if let (Some(fields_names_without_ignored), Some(fields_names)) =
+			(fields.field_names_filtered(), fields.field_names())
+		{
 			VariantDetails {
 				fields,
 				fields_self_capture: quote!({ #(#fields_names: #self_vars),* }),
 				fields_other_capture: quote!({ #(#fields_names: #other_vars),* }),
-				fields_assignment: quote!({ #(#fields_names: #changes_vars),* }),
+				fields_assignment: quote!({ #(#fields_names_without_ignored: #changes_vars),* }),
 				match_branch: Default::default(),
 			}
 		} else {
@@ -330,13 +377,13 @@ impl VariantDetails {
 			&self;
 
 		let both_ident = format_ident!("Both{}", variant_name);
-		let self_vars = fields.self_vars();
+		let self_vars_without_ignored = fields.self_vars_filtered();
 		let changes_vars = fields.changes_vars();
-		let other_vars = fields.other_vars();
+		let other_vars_without_ignored = fields.other_vars_filtered();
 
 		let return_result = if changes_vars.is_empty() {
 			quote!(comparable::Changed::Unchanged)
-		} else if changes_vars.len() == 1 {
+		} else if fields.self_vars().len() == 1 {
 			quote! {
 				#(#changes_vars.map(
 					|changes_var0|
@@ -373,7 +420,7 @@ impl VariantDetails {
 		self.match_branch = quote! {
 			(#type_name::#variant_name #fields_self_capture,
 			 #type_name::#variant_name #fields_other_capture) => {
-				#(let #changes_vars = #self_vars.comparison(&#other_vars);)*
+				#(let #changes_vars = #self_vars_without_ignored.comparison(&#other_vars_without_ignored);)*
 				#return_result
 			}
 		};
