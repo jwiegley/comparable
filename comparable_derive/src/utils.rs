@@ -48,7 +48,7 @@ pub fn map_on_fields_over_data(
 		}),
 		syn::Data::Union(un) => syn::Data::Union(syn::DataUnion {
 			fields: syn::FieldsNamed {
-				named: FromIterator::from_iter(map_fields(inject_synthetics, un.fields.named.iter(), f)),
+				named: FromIterator::from_iter(map_fields(inject_synthetics, un.fields.named.iter(), true, f)),
 				..un.fields.clone()
 			},
 			..*un
@@ -75,11 +75,11 @@ pub fn map_on_fields(
 ) -> syn::Fields {
 	match fields {
 		syn::Fields::Named(named) => syn::Fields::Named(syn::FieldsNamed {
-			named: FromIterator::from_iter(map_fields(inject_synthetics, named.named.iter(), f)),
+			named: FromIterator::from_iter(map_fields(inject_synthetics, named.named.iter(), true, f)),
 			..*named
 		}),
 		syn::Fields::Unnamed(unnamed) => syn::Fields::Unnamed(syn::FieldsUnnamed {
-			unnamed: FromIterator::from_iter(map_fields(inject_synthetics, unnamed.unnamed.iter(), f)),
+			unnamed: FromIterator::from_iter(map_fields(inject_synthetics, unnamed.unnamed.iter(), true, f)),
 			..*unnamed
 		}),
 		syn::Fields::Unit => syn::Fields::Unit,
@@ -106,6 +106,7 @@ fn standard_accessor(index: usize, field: &syn::Field) -> Box<dyn Fn(&syn::Ident
 pub fn map_fields<'a, 'b: 'a, R>(
 	inject_synthetics: bool,
 	fields: impl IntoIterator<Item = &'a syn::Field>,
+	allow_ignore: bool,
 	mut f: impl FnMut(&FieldRef) -> R,
 ) -> Vec<R> {
 	let mut index = 0;
@@ -137,16 +138,16 @@ pub fn map_fields<'a, 'b: 'a, R>(
 				});
 			}
 		}
-		if has_attr(&field.attrs, "comparable_ignore").is_none() {
+		if has_attr(&field.attrs, "comparable_ignore").is_none() || !allow_ignore {
 			result.push(f(&FieldRef { index, field, accessor: standard_accessor(index, field) }));
-			index += 1;
 		}
+		index += 1;
 	});
 	result
 }
 
 pub fn field_count<'a>(inject_synthetics: bool, fields: impl IntoIterator<Item = &'a syn::Field>) -> usize {
-	map_fields(inject_synthetics, fields, |_| ()).len()
+	map_fields(inject_synthetics, fields, true, |_| ()).len()
 }
 
 pub fn map_variants<'a, R>(
@@ -188,7 +189,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 			quote!(struct),
 			match &st.fields {
 				syn::Fields::Named(named) => {
-					let fields = map_fields(false, named.named.iter(), |r| {
+					let fields = map_fields(false, named.named.iter(), true, |r| {
 						let vis = &r.field.vis;
 						let ident = r.field.ident.as_ref().expect("Found unnamed field in named struct");
 						let ty = &r.field.ty;
@@ -202,7 +203,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 				}
 				syn::Fields::Unnamed(unnamed) => {
 					let (field_vis, field_types): (Vec<syn::Visibility>, Vec<syn::Type>) =
-						map_fields(false, unnamed.unnamed.iter(), |r| (r.field.vis.clone(), r.field.ty.clone()))
+						map_fields(false, unnamed.unnamed.iter(), true, |r| (r.field.vis.clone(), r.field.ty.clone()))
 							.into_iter()
 							.unzip();
 					quote! {
@@ -219,7 +220,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 				let variant_name = &variant.ident;
 				match &variant.fields {
 					syn::Fields::Named(named) => {
-						let fields = map_fields(false, named.named.iter(), |r| {
+						let fields = map_fields(false, named.named.iter(), true, |r| {
 							let vis = &r.field.vis;
 							let ident = r.field.ident.as_ref().expect("Found unnamed field in named struct");
 							let ty = &r.field.ty;
@@ -231,9 +232,11 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 					}
 					syn::Fields::Unnamed(unnamed) => {
 						let (field_vis, field_types): (Vec<syn::Visibility>, Vec<syn::Type>) =
-							map_fields(false, unnamed.unnamed.iter(), |r| (r.field.vis.clone(), r.field.ty.clone()))
-								.into_iter()
-								.unzip();
+							map_fields(false, unnamed.unnamed.iter(), true, |r| {
+								(r.field.vis.clone(), r.field.ty.clone())
+							})
+							.into_iter()
+							.unzip();
 						quote! {
 							#variant_name(#(#field_vis #field_types),*)
 						}

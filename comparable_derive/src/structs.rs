@@ -10,7 +10,7 @@ pub fn generate_describe_body_for_structs(desc_name: &syn::Ident, st: &syn::Data
 	match &st.fields {
 		syn::Fields::Named(named) => {
 			let (field_names, field_accessors): (Vec<syn::Ident>, Vec<syn::Expr>) =
-				map_fields(true, named.named.iter(), |r| {
+				map_fields(true, named.named.iter(), true, |r| {
 					(
 						r.field.ident.as_ref().expect("Found unnamed field in named struct").clone(),
 						(*r.accessor)(&format_ident!("self")),
@@ -25,7 +25,7 @@ pub fn generate_describe_body_for_structs(desc_name: &syn::Ident, st: &syn::Data
 			}
 		}
 		syn::Fields::Unnamed(unnamed) => {
-			let field_indices = map_fields(false, unnamed.unnamed.iter(), |r| syn::Index::from(r.index));
+			let field_indices = map_fields(false, unnamed.unnamed.iter(), true, |r| syn::Index::from(r.index));
 			quote! {
 				#desc_name(#(self.#field_indices.describe()),*)
 			}
@@ -71,8 +71,8 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data>
 			};
 
 			let variants = match &st.fields {
-				syn::Fields::Named(named) => map_fields(true, named.named.iter(), change_field),
-				syn::Fields::Unnamed(unnamed) => map_fields(true, unnamed.unnamed.iter(), change_field),
+				syn::Fields::Named(named) => map_fields(true, named.named.iter(), true, change_field),
+				syn::Fields::Unnamed(unnamed) => map_fields(true, unnamed.unnamed.iter(), true, change_field),
 				syn::Fields::Unit => Vec::new(),
 			};
 
@@ -87,7 +87,7 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data>
 
 pub fn generate_comparison_body_for_structs(change_name: &syn::Ident, st: &syn::DataStruct) -> TokenStream {
 	let (field_names_and_comparisons, field_variants): (Vec<(TokenStream, TokenStream)>, Vec<syn::Ident>) =
-		map_fields(true, st.fields.iter(), |r: &FieldRef| -> ((TokenStream, TokenStream), syn::Ident) {
+		map_fields(true, st.fields.iter(), true, |r: &FieldRef| -> ((TokenStream, TokenStream), syn::Ident) {
 			let idx = syn::Index::from(r.index);
 			let (name, variant) = if let Some(name) = r.field.ident.as_ref() {
 				(quote!(#name), syn::Ident::new(&name.to_string().to_case(Case::Pascal), Span::call_site()))

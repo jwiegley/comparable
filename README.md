@@ -751,6 +751,29 @@ impl Comparable for MyEnum {
 }
 ```
 
+## Field attribute: `comparable_ignore`
+
+Similarly to structs, `#[comparable_ignore]` can be applied to enum variant
+fields that cannot be compared for differences.
+
+```
+#[derive(Comparable)]
+enum MyEnumWithNamedFields {
+    Variant1{ some_u8: u8},
+    Variant2 {
+        some_u16: u16,
+        #[comparable_ignore]
+        random_value: u64,
+    },
+}
+
+#[derive(Comparable)]
+enum MyEnumWithUnnamedFields {
+    Variant1(u8),
+    Variant2 (u16, #[comparable_ignore] u64),
+}
+```
+
 ## Deriving `Comparable` for enums: the `Desc` type
 
 By default for enums, deriving [`Comparable`] creates a "mirror" of that

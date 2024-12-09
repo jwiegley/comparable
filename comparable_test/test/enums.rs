@@ -332,3 +332,218 @@ fn test_enum_fields_varying_visibility() {
 		Changed(VisiblePrivateChange::BothField { int: I32Change(1, 4) }),
 	);
 }
+
+#[test]
+fn test_enum_1_variant_1_unnamed_field_1_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field(#[comparable_ignore] u8),
+	}
+
+	assert_changes!(&UnitEnum::Field(0), &UnitEnum::Field(1), Unchanged);
+}
+
+#[test]
+fn test_enum_1_variant_2_unnamed_field_first_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field(#[comparable_ignore] u8, u16),
+	}
+
+	assert_changes!(&UnitEnum::Field(0, 0), &UnitEnum::Field(1, 0), Unchanged);
+	assert_changes!(
+		&UnitEnum::Field(0, 0),
+		&UnitEnum::Field(1, 1),
+		Changed(UnitEnumChange::BothField(Changed(U16Change(0, 1))))
+	);
+}
+
+#[test]
+fn test_enum_1_variant_2_unnamed_field_second_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field(u8, #[comparable_ignore] u16),
+	}
+
+	assert_changes!(&UnitEnum::Field(0, 0), &UnitEnum::Field(0, 1), Unchanged);
+	assert_changes!(
+		&UnitEnum::Field(0, 0),
+		&UnitEnum::Field(1, 1),
+		Changed(UnitEnumChange::BothField(Changed(U8Change(0, 1))))
+	);
+}
+
+#[test]
+fn test_enum_1_variant_3_unnamed_field_first_third_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field(#[comparable_ignore] u8, u16, #[comparable_ignore] u32),
+	}
+
+	assert_changes!(&UnitEnum::Field(0, 0, 0), &UnitEnum::Field(1, 0, 1), Unchanged);
+	assert_changes!(
+		&UnitEnum::Field(0, 0, 0),
+		&UnitEnum::Field(1, 1, 0),
+		Changed(UnitEnumChange::BothField(Changed(U16Change(0, 1))))
+	);
+	assert_changes!(
+		&UnitEnum::Field(0, 0, 0),
+		&UnitEnum::Field(1, 1, 1),
+		Changed(UnitEnumChange::BothField(Changed(U16Change(0, 1))))
+	);
+}
+
+#[test]
+fn test_enum_2_variant_2_unnamed_field_1_ignored() {
+	#[derive(Comparable)]
+	enum TwoVariantEnum {
+		Field1(#[comparable_ignore] u8, u16),
+		Field2(u32),
+	}
+
+	assert_changes!(&TwoVariantEnum::Field1(0, 0), &TwoVariantEnum::Field1(1, 0), Unchanged);
+	assert_changes!(&TwoVariantEnum::Field2(1), &TwoVariantEnum::Field2(1), Unchanged);
+	assert_changes!(
+		&TwoVariantEnum::Field2(1),
+		&TwoVariantEnum::Field2(0),
+		Changed(TwoVariantEnumChange::BothField2(U32Change(1, 0)))
+	);
+	assert_changes!(
+		&TwoVariantEnum::Field1(1, 0),
+		&TwoVariantEnum::Field2(0),
+		Changed(TwoVariantEnumChange::Different(TwoVariantEnumDesc::Field1(0), TwoVariantEnumDesc::Field2(0)))
+	);
+	assert_changes!(
+		&TwoVariantEnum::Field1(0, 0),
+		&TwoVariantEnum::Field1(1, 1),
+		Changed(TwoVariantEnumChange::BothField1(Changed(U16Change(0, 1))))
+	);
+}
+
+#[test]
+fn test_enum_1_variant_1_named_field_1_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field {
+			#[comparable_ignore]
+			some_u8: u8,
+		},
+	}
+
+	assert_changes!(&UnitEnum::Field { some_u8: 0 }, &UnitEnum::Field { some_u8: 1 }, Unchanged);
+}
+
+#[test]
+fn test_enum_1_variant_2_named_field_first_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field {
+			#[comparable_ignore]
+			some_u8: u8,
+			some_u16: u16,
+		},
+	}
+
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 0 },
+		Unchanged
+	);
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 1 },
+		Changed(UnitEnumChange::BothField { some_u16: Changed(U16Change(0, 1)) })
+	);
+}
+
+#[test]
+fn test_enum_1_variant_2_named_field_second_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field {
+			some_u8: u8,
+			#[comparable_ignore]
+			some_u16: u16,
+		},
+	}
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0 },
+		&UnitEnum::Field { some_u8: 0, some_u16: 1 },
+		Unchanged
+	);
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 1 },
+		Changed(UnitEnumChange::BothField { some_u8: Changed(U8Change(0, 1)) })
+	);
+}
+
+#[test]
+fn test_enum_1_variant_3_named_field_first_third_ignored() {
+	#[derive(Comparable)]
+	enum UnitEnum {
+		Field {
+			#[comparable_ignore]
+			some_u8: u8,
+			some_u16: u16,
+			#[comparable_ignore]
+			some_u32: u32,
+		},
+	}
+
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0, some_u32: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 0, some_u32: 1 },
+		Unchanged
+	);
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0, some_u32: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 1, some_u32: 0 },
+		Changed(UnitEnumChange::BothField { some_u16: Changed(U16Change(0, 1)) })
+	);
+	assert_changes!(
+		&UnitEnum::Field { some_u8: 0, some_u16: 0, some_u32: 0 },
+		&UnitEnum::Field { some_u8: 1, some_u16: 1, some_u32: 1 },
+		Changed(UnitEnumChange::BothField { some_u16: Changed(U16Change(0, 1)) })
+	);
+}
+
+#[test]
+fn test_enum_2_variant_2_named_field_1_ignored() {
+	#[derive(Comparable)]
+	enum TwoVariantEnum {
+		Field1 {
+			#[comparable_ignore]
+			some_u8: u8,
+			some_u16: u16,
+		},
+		Field2 {
+			some_u32: u32,
+		},
+	}
+
+	assert_changes!(
+		&TwoVariantEnum::Field1 { some_u8: 0, some_u16: 0 },
+		&TwoVariantEnum::Field1 { some_u8: 1, some_u16: 0 },
+		Unchanged
+	);
+	assert_changes!(&TwoVariantEnum::Field2 { some_u32: 1 }, &TwoVariantEnum::Field2 { some_u32: 1 }, Unchanged);
+	assert_changes!(
+		&TwoVariantEnum::Field2 { some_u32: 1 },
+		&TwoVariantEnum::Field2 { some_u32: 0 },
+		Changed(TwoVariantEnumChange::BothField2 { some_u32: U32Change(1, 0) })
+	);
+	assert_changes!(
+		&TwoVariantEnum::Field1 { some_u8: 1, some_u16: 0 },
+		&TwoVariantEnum::Field2 { some_u32: 0 },
+		Changed(TwoVariantEnumChange::Different(
+			TwoVariantEnumDesc::Field1 { some_u16: 0 },
+			TwoVariantEnumDesc::Field2 { some_u32: 0 }
+		))
+	);
+	assert_changes!(
+		&TwoVariantEnum::Field1 { some_u8: 0, some_u16: 0 },
+		&TwoVariantEnum::Field1 { some_u8: 1, some_u16: 1 },
+		Changed(TwoVariantEnumChange::BothField1 { some_u16: Changed(U16Change(0, 1)) })
+	);
+}
