@@ -237,7 +237,7 @@ enum VariantFields {
 impl VariantFields {
 	fn field_names(&self) -> Option<Vec<syn::Ident>> {
 		match self {
-			VariantFields::Named(m) => Some(m.iter().filter_map(|(k, _)| Some(k.clone())).collect()),
+			VariantFields::Named(m) => Some(m.iter().map(|(k, _)| k.clone()).collect()),
 			_ => None,
 		}
 	}
