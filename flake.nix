@@ -24,7 +24,7 @@
             eza
             fd
             rust-bin.beta.latest.default
-            darwin.apple_sdk.frameworks.Security
+            # darwin.apple_sdk.frameworks.Security
           ];
 
           shellHook = ''
