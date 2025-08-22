@@ -13,8 +13,7 @@ test: build
 	cargo test
 
 clippy: test docs
-	cargo +nightly clippy -j40 --tests -- -D clippy::all || \
-	    cargo clippy -j40 --tests -- -D clippy::all
+	cargo clippy -j40 --tests -- -D clippy::all
 
 clean:
 	rm -f comparable/src/lib.rs
