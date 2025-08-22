@@ -70,9 +70,9 @@ fn test_struct_1_unnamed_field_ignored_with_attrs() {
 	#[describe_body(self.to_string())]
 	pub struct ScalarUnnamedVecIgnored(#[comparable_ignore] pub Vec<u8>);
 
-	impl ToString for ScalarUnnamedVecIgnored {
-		fn to_string(&self) -> String {
-			"it's a vector".to_string()
+	impl std::fmt::Display for ScalarUnnamedVecIgnored {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			write!(f, "it's a vector")
 		}
 	}
 
