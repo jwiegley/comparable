@@ -57,7 +57,9 @@ impl Definition {
 				ty: Self::assoc_type(&r.field.ty, "Desc"),
 				..r.field.clone()
 			}),
+			&inputs.input.generics,
 		);
+		let (_impl_generics, ty_generics, _where_clause) = inputs.input.generics.split_for_impl();
 		Self {
 			ty: Some(
 				inputs
@@ -72,7 +74,7 @@ impl Definition {
 						} else if let Some(ty) = &inputs.attrs.describe_type {
 							quote!(#ty)
 						} else {
-							quote!(#desc_name)
+							quote!(#desc_name#ty_generics)
 						})
 						.expect("Failed to parse Desc type name"),
 					)
@@ -123,27 +125,30 @@ impl Definition {
 	pub fn generate_change_type(inputs: &Inputs) -> Self {
 		let type_name = &inputs.input.ident;
 		let change_name = format_ident!("{}{}", type_name, inputs.attrs.comparable_change_suffix);
-		let change_type = Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data).map(
-			|(ch_ty, helper_tys)| {
-				let ch_def = generate_type_definition(&inputs.visibility, &change_name, &ch_ty);
-				let helper_defs =
-					helper_tys.iter().map(|(name, ty)| generate_type_definition(&inputs.visibility, name, ty));
-				quote! {
-					#ch_def
-					#(#helper_defs)*
-				}
-			},
-		);
+		let change_type =
+			Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data, &inputs.input.generics)
+				.map(|(ch_ty, helper_tys)| {
+					let ch_def =
+						generate_type_definition(&inputs.visibility, &change_name, &ch_ty, &inputs.input.generics);
+					let helper_defs = helper_tys.iter().map(|(name, ty)| {
+						generate_type_definition(&inputs.visibility, name, ty, &inputs.input.generics)
+					});
+					quote! {
+						#ch_def
+						#(#helper_defs)*
+					}
+				});
+		let (_impl_generics, ty_generics, _where_clause) = inputs.input.generics.split_for_impl();
 		Self {
 			ty: if change_type.is_some() {
 				(if let syn::Data::Struct(st) = &inputs.input.data {
 					match field_count(true, st.fields.iter()) {
 						0 => None,
-						1 => Some(quote!(#change_name)),
-						_ => Some(quote!(Vec<#change_name>)),
+						1 => Some(quote!(#change_name#ty_generics)),
+						_ => Some(quote!(Vec<#change_name#ty_generics>)),
 					}
 				} else {
-					Some(quote!(#change_name))
+					Some(quote!(#change_name#ty_generics))
 				})
 				.map(|ty| syn::parse2(ty).expect("Failed to parse Change type name"))
 			} else {
@@ -163,13 +168,14 @@ impl Definition {
 		attrs: &Attributes,
 		type_name: &syn::Ident,
 		data: &syn::Data,
+		generics: &syn::Generics,
 	) -> Option<(syn::Data, Vec<(syn::Ident, syn::Data)>)> {
 		match data {
 			syn::Data::Struct(st) => create_change_type_for_structs(st).map(|x| (x, Vec::new())),
 			syn::Data::Enum(en) => Some(if attrs.variant_struct_fields {
-				create_change_type_for_enums_with_helpers(type_name, &attrs.comparable_change_suffix, en)
+				create_change_type_for_enums_with_helpers(type_name, &attrs.comparable_change_suffix, en, generics)
 			} else {
-				(create_change_type_for_enums(type_name, en), Vec::new())
+				(create_change_type_for_enums(type_name, en, generics), Vec::new())
 			}),
 			syn::Data::Union(_un) => {
 				panic!("comparable_derive::generate_change_type not implemented for unions")

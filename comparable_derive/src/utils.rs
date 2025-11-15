@@ -10,10 +10,6 @@ pub fn unit_type() -> syn::Type {
 	})
 }
 
-pub fn ident_to_type(ident: &syn::Ident) -> syn::Type {
-	syn::parse2(quote!(#ident)).unwrap_or_else(|_| panic!("Failed to parse type"))
-}
-
 #[allow(dead_code)]
 pub fn vec_type(ty: &syn::Type) -> syn::Type {
 	syn::parse2(quote!(Vec<#ty>)).unwrap_or_else(|_| panic!("Failed to parse Vec type"))
@@ -183,7 +179,35 @@ fn parse_synthetics(tokens: &TokenStream) -> Result<BTreeMap<syn::Ident, syn::Ex
 		.collect())
 }
 
-pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::Ident, data: &syn::Data) -> TokenStream {
+pub fn generate_type_definition(
+	visibility: &syn::Visibility,
+	type_name: &syn::Ident,
+	data: &syn::Data,
+	generics: &syn::Generics,
+) -> TokenStream {
+	let (impl_generics, _ty_generics, where_clause) = generics.split_for_impl();
+
+	// Build where clause predicates for T: Comparable for each generic type parameter
+	let mut where_predicates = vec![];
+	for param in &generics.params {
+		if let syn::GenericParam::Type(type_param) = param {
+			let ident = &type_param.ident;
+			where_predicates.push(quote!(#ident: comparable::Comparable));
+		}
+	}
+
+	let extended_where_clause = if !where_predicates.is_empty() || where_clause.is_some() {
+		let existing_predicates = where_clause.map(|w| {
+			let predicates = &w.predicates;
+			quote!(#predicates,)
+		});
+		quote! {
+			where #existing_predicates #(#where_predicates),*
+		}
+	} else {
+		quote!()
+	};
+
 	let (keyword, body) = match data {
 		syn::Data::Struct(st) => (
 			quote!(struct),
@@ -196,6 +220,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 						quote!(#vis #ident: #ty)
 					});
 					quote! {
+						#extended_where_clause
 						{
 							#(#fields),*
 						}
@@ -207,11 +232,11 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 							.into_iter()
 							.unzip();
 					quote! {
-						(#(#field_vis #field_types),*);
+						(#(#field_vis #field_types),*) #extended_where_clause ;
 					}
 				}
 				syn::Fields::Unit => {
-					quote! { ; }
+					quote! { #extended_where_clause ; }
 				}
 			},
 		),
@@ -249,6 +274,7 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 				}
 			});
 			quote! {
+				#extended_where_clause
 				{
 					#(#variants),*
 				}
@@ -268,6 +294,6 @@ pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::I
 	quote! {
 		#derive_serde
 		#[derive(PartialEq, Debug)]
-		#visibility #keyword #type_name#body
+		#visibility #keyword #type_name#impl_generics#body
 	}
 }

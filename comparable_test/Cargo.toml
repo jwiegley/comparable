@@ -17,6 +17,10 @@ include = ["test/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
 name = "sample-test"
 path = "test/test.rs"
 
+[[test]]
+name = "generic_enum_test"
+path = "test/generic_enum_test.rs"
+
 [dev-dependencies]
 pretty_assertions = "1.3"
 proptest = "1.0"
