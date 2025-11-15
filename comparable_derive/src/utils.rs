@@ -179,7 +179,12 @@ fn parse_synthetics(tokens: &TokenStream) -> Result<BTreeMap<syn::Ident, syn::Ex
 		.collect())
 }
 
-pub fn generate_type_definition(visibility: &syn::Visibility, type_name: &syn::Ident, data: &syn::Data, generics: &syn::Generics) -> TokenStream {
+pub fn generate_type_definition(
+	visibility: &syn::Visibility,
+	type_name: &syn::Ident,
+	data: &syn::Data,
+	generics: &syn::Generics,
+) -> TokenStream {
 	let (impl_generics, _ty_generics, where_clause) = generics.split_for_impl();
 
 	// Build where clause predicates for T: Comparable for each generic type parameter

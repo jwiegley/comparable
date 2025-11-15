@@ -69,8 +69,8 @@ pub fn generate_describe_body_for_enums(
 
 pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum, generics: &syn::Generics) -> syn::Data {
 	let (_impl_generics, ty_generics, _where_clause) = generics.split_for_impl();
-	let type_with_generics: syn::Type = syn::parse2(quote!(#type_name#ty_generics))
-		.expect("Failed to parse type with generics");
+	let type_with_generics: syn::Type =
+		syn::parse2(quote!(#type_name#ty_generics)).expect("Failed to parse type with generics");
 
 	syn::Data::Enum(syn::DataEnum {
 		variants: FromIterator::from_iter(
@@ -138,8 +138,8 @@ pub fn create_change_type_for_enums_with_helpers(
 	generics: &syn::Generics,
 ) -> (syn::Data, Vec<(syn::Ident, syn::Data)>) {
 	let (_impl_generics, ty_generics, _where_clause) = generics.split_for_impl();
-	let type_with_generics: syn::Type = syn::parse2(quote!(#type_name#ty_generics))
-		.expect("Failed to parse type with generics");
+	let type_with_generics: syn::Type =
+		syn::parse2(quote!(#type_name#ty_generics)).expect("Failed to parse type with generics");
 
 	let mut helper_structs: Vec<(syn::Ident, syn::Data)> = Vec::new();
 	let helper_structs_ref = &mut helper_structs;
@@ -173,8 +173,9 @@ pub fn create_change_type_for_enums_with_helpers(
 									format_ident!("{}{}{}", type_name, &variant.ident, change_suffix);
 								helper_structs_ref.push((fields_change_name.clone(), fields_change_struct));
 
-								let fields_change_type_with_generics: syn::Type = syn::parse2(quote!(#fields_change_name#ty_generics))
-									.expect("Failed to parse fields change type with generics");
+								let fields_change_type_with_generics: syn::Type =
+									syn::parse2(quote!(#fields_change_name#ty_generics))
+										.expect("Failed to parse fields change type with generics");
 
 								syn::Fields::Unnamed(syn::FieldsUnnamed {
 									unnamed: FromIterator::from_iter(vec![syn::Field {

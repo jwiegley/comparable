@@ -125,17 +125,19 @@ impl Definition {
 	pub fn generate_change_type(inputs: &Inputs) -> Self {
 		let type_name = &inputs.input.ident;
 		let change_name = format_ident!("{}{}", type_name, inputs.attrs.comparable_change_suffix);
-		let change_type = Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data, &inputs.input.generics).map(
-			|(ch_ty, helper_tys)| {
-				let ch_def = generate_type_definition(&inputs.visibility, &change_name, &ch_ty, &inputs.input.generics);
-				let helper_defs =
-					helper_tys.iter().map(|(name, ty)| generate_type_definition(&inputs.visibility, name, ty, &inputs.input.generics));
-				quote! {
-					#ch_def
-					#(#helper_defs)*
-				}
-			},
-		);
+		let change_type =
+			Self::create_change_type(&inputs.attrs, &inputs.input.ident, &inputs.input.data, &inputs.input.generics)
+				.map(|(ch_ty, helper_tys)| {
+					let ch_def =
+						generate_type_definition(&inputs.visibility, &change_name, &ch_ty, &inputs.input.generics);
+					let helper_defs = helper_tys.iter().map(|(name, ty)| {
+						generate_type_definition(&inputs.visibility, name, ty, &inputs.input.generics)
+					});
+					quote! {
+						#ch_def
+						#(#helper_defs)*
+					}
+				});
 		let (_impl_generics, ty_generics, _where_clause) = inputs.input.generics.split_for_impl();
 		Self {
 			ty: if change_type.is_some() {
