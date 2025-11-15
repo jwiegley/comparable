@@ -16,6 +16,7 @@ impl Outputs {
 
 		let impl_comparable = Self::impl_comparable(
 			&inputs.input.ident,
+			&inputs.input.generics,
 			desc.as_ref().and_then(|d| d.ty.as_ref()).unwrap_or(&unit_type()),
 			desc.as_ref().map(|d| &d.method_body).unwrap_or(&quote!()),
 			change.as_ref().and_then(|c| c.ty.as_ref()).unwrap_or(&unit_type()),
@@ -36,13 +37,37 @@ impl Outputs {
 
 	fn impl_comparable(
 		name: &syn::Ident,
+		generics: &syn::Generics,
 		describe_type: &syn::Type,
 		describe_body: &TokenStream,
 		change_type: &syn::Type,
 		change_body: &TokenStream,
 	) -> TokenStream {
+		let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+		// Build where clause predicates for T: Comparable for each generic type parameter
+		let mut where_predicates = vec![];
+		for param in &generics.params {
+			if let syn::GenericParam::Type(type_param) = param {
+				let ident = &type_param.ident;
+				where_predicates.push(quote!(#ident: comparable::Comparable));
+			}
+		}
+
+		let extended_where_clause = if !where_predicates.is_empty() || where_clause.is_some() {
+			let existing_predicates = where_clause.map(|w| {
+				let predicates = &w.predicates;
+				quote!(#predicates,)
+			});
+			quote! {
+				where #existing_predicates #(#where_predicates),*
+			}
+		} else {
+			quote!()
+		};
+
 		quote! {
-			impl comparable::Comparable for #name {
+			impl #impl_generics comparable::Comparable for #name #ty_generics #extended_where_clause {
 				type Desc = #describe_type;
 				fn describe(&self) -> Self::Desc {
 					#describe_body
