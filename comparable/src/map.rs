@@ -37,8 +37,8 @@ impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, V
 		);
 		changes.append(
 			&mut self
-				.iter()
-				.flat_map(|(k, _v)| {
+				.keys()
+				.flat_map(|k| {
 					if !other.contains_key(k) {
 						Changed::Changed(MapChange::Removed(k.clone()))
 					} else {
