@@ -1,3 +1,6 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(dead_code)]
+
 use comparable::Comparable;
 use std::fmt::Debug;
 

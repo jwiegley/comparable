@@ -1,0 +1,24 @@
+[package]
+name = "comparable-fuzz"
+version = "0.0.0"
+authors = ["John Wiegley"]
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+comparable = { path = "../comparable", features = ["derive"] }
+
+[[bin]]
+name = "compare"
+path = "fuzz_targets/compare.rs"
+test = false
+doc = false
+bench = false
+
+# Keep the fuzz crate out of the parent workspace.
+[workspace]
