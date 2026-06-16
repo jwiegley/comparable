@@ -1,1 +1,11 @@
 target/
+
+# Coverage / profiling artifacts
+/lcov.info
+
+# Editor and OS cruft
+*~
+*.swp
+*.swo
+.#*
+.DS_Store

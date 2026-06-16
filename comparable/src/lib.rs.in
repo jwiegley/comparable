@@ -16,8 +16,6 @@ pub mod string;
 pub mod types;
 
 #[doc(hidden)]
-pub use crate::boxes::*;
-#[doc(hidden)]
 pub use crate::map::*;
 #[doc(hidden)]
 pub use crate::opt::*;

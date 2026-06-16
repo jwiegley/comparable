@@ -1,0 +1,41 @@
+# Pre-commit checks for the comparable workspace.
+#
+# These are the FAST checks only -- formatting, linting, a warning-free build,
+# the test suite and the doc build -- run in parallel.  The heavier gates
+# (code coverage, performance regression, Miri, fuzzing and `nix build`) run in
+# CI; see .github/workflows/ci.yml.
+#
+# The Rust commands assume the Nix dev shell is active.  With direnv that is
+# automatic; otherwise prefix a commit with `nix develop --command`.  The shell
+# provides cargo, clippy, rustfmt, nixpkgs-fmt, statix, shfmt and shellcheck.
+
+pre-commit:
+  parallel: true
+  commands:
+    rust-fmt:
+      glob: "*.rs"
+      run: cargo fmt --all -- --check
+    rust-clippy:
+      glob: "*.rs"
+      run: cargo clippy --workspace --all-targets -- -D warnings
+    rust-build:
+      glob: "*.rs"
+      run: cargo build --workspace --all-targets
+    rust-test:
+      glob: "*.rs"
+      run: cargo test --workspace
+    rust-doc:
+      glob: "*.rs"
+      run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
+    nix-fmt:
+      glob: "*.nix"
+      run: nixpkgs-fmt --check {staged_files}
+    nix-lint:
+      glob: "*.nix"
+      run: statix check
+    shell-fmt:
+      glob: "*.sh"
+      run: shfmt -d {staged_files}
+    shell-lint:
+      glob: "*.sh"
+      run: shellcheck {staged_files}

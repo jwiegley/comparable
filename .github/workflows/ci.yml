@@ -1,0 +1,93 @@
+# Continuous integration.
+#
+# `nix flake check` covers the same fast checks as the pre-commit hook (build,
+# tests, clippy with warnings as errors, formatting, and a warning-free doc
+# build).  The remaining jobs run the heavier gates that are deliberately kept
+# out of pre-commit: a clean `nix build`, code coverage, documentation as an
+# artifact, Miri, fuzzing, and a performance-regression check.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flake-check:
+    name: nix flake check (build, test, clippy, fmt, docs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix flake check -L
+
+  nix-build:
+    name: nix build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix build -L
+
+  coverage:
+    name: coverage (must not drop)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Coverage does not drop below baseline
+        run: nix develop --command make coverage-check
+      - name: Generate lcov report
+        run: nix develop --command make coverage-lcov
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: lcov.info
+
+  docs:
+    name: docs (artifact)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Build documentation
+        run: nix develop --command make docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: target/doc
+
+  miri:
+    name: miri (UB / memory checks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix develop .#nightly --command make miri
+
+  fuzz:
+    name: fuzz (smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix develop .#nightly --command make fuzz-smoke
+
+  perf:
+    name: performance (must not regress >5%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Benchmark base vs. HEAD
+        run: nix develop --command bash scripts/ci-perf.sh "origin/${{ github.base_ref || 'main' }}"
