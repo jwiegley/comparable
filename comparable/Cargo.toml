@@ -24,6 +24,11 @@ comparable_helper = { version = "0.5.6", path = "../comparable_helper" }
 
 [dev-dependencies]
 comparable_derive = { version = "0.5.6", path = "../comparable_derive" }
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "comparison"
+harness = false
 
 [package.metadata.playground]
 features = ["derive"]
