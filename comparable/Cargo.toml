@@ -37,3 +37,6 @@ features = ["derive"]
 # Provide derive(Comparable) macro.
 derive = ["comparable_derive"]
 serde = ["comparable_derive?/serde"]
+
+[lints]
+workspace = true

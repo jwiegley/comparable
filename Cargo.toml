@@ -6,3 +6,12 @@ members = [
   "comparable_helper",
   "comparable_test",
 ]
+
+# The fuzz crate has its own [workspace] and toolchain requirements.
+exclude = ["fuzz"]
+
+[workspace.lints.rust]
+# Treat all compiler warnings as errors, but only for our own crates: Cargo
+# does not apply this table to dependencies, nor to downstream users of the
+# published crates.
+warnings = "deny"
