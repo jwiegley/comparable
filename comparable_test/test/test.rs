@@ -3,13 +3,16 @@
 // #[comparable_ignore] and the various derive shapes.
 #![allow(dead_code)]
 
+mod array;
 mod boxes;
 mod empty;
 mod enums;
 mod map;
 mod opt;
+mod path;
 mod scalar;
 mod set;
 mod string;
 mod structs;
+mod tuple;
 mod unions;
