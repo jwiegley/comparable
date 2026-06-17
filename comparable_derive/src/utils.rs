@@ -289,13 +289,37 @@ pub fn generate_type_definition(
 			panic!("comparable_derive::generate_type_definition not implemented for unions")
 		}
 	};
-	let derive_serde = if cfg!(feature = "serde") {
-		quote! {
-			#[derive(serde::Serialize, serde::Deserialize)]
+	// serde infers a `T: Serialize`/`T: Deserialize` bound for every generic type
+	// parameter, but the fields of the generated type are associated types like
+	// `<T as Comparable>::Desc`, not `T` itself. Override that inference with
+	// `T: comparable::Comparable`: with the `serde` feature on, `Comparable`
+	// guarantees its `Desc`/`Change` associated types are `Serialize +
+	// DeserializeOwned`, so this is exactly the bound the derived impls need (and
+	// it avoids spuriously requiring `T: Serialize`).
+	#[cfg(feature = "serde")]
+	let derive_serde = {
+		let type_param_bounds: Vec<String> = generics
+			.params
+			.iter()
+			.filter_map(|param| match param {
+				syn::GenericParam::Type(type_param) => Some(format!("{}: comparable::Comparable", type_param.ident)),
+				_ => None,
+			})
+			.collect();
+		if type_param_bounds.is_empty() {
+			quote! {
+				#[derive(serde::Serialize, serde::Deserialize)]
+			}
+		} else {
+			let bound = type_param_bounds.join(", ");
+			quote! {
+				#[derive(serde::Serialize, serde::Deserialize)]
+				#[serde(bound = #bound)]
+			}
 		}
-	} else {
-		quote! {}
 	};
+	#[cfg(not(feature = "serde"))]
+	let derive_serde = quote! {};
 	quote! {
 		#derive_serde
 		#[derive(PartialEq, Debug)]
