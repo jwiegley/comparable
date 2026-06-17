@@ -24,6 +24,9 @@ pre-commit:
     rust-test:
       glob: "*.rs"
       run: cargo test --workspace
+    rust-test-serde:
+      glob: "*.rs"
+      run: cargo test -p comparable_test --features serde --test serde
     rust-doc:
       glob: "*.rs"
       run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps

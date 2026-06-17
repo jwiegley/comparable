@@ -92,6 +92,12 @@
             "cargo fmt --all -- --check";
           docs = mkPhaseCheck "docs" { RUSTDOCFLAGS = "-D warnings"; }
             "cargo doc --workspace --no-deps";
+          # The default `build`/test runs serde-disabled.  This check exercises
+          # the serde-enabled path (issue #12): the `Comparable` derive and the
+          # built-in impls must keep producing Serialize/Deserialize-able
+          # Desc/Change types, including through generic type parameters.
+          tests-serde = mkPhaseCheck "tests-serde" { }
+            "cargo test -p comparable_test --features serde --test serde";
         };
 
         formatter = pkgs.nixpkgs-fmt;

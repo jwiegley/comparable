@@ -12,7 +12,7 @@ SHELL := bash
 CARGO_TARGET_DIR ?= target
 TARGET = $(HOME)/dfinity/fixtures/rs/comparable
 
-.PHONY: all help gen-lib build check test doc docs docs-open \
+.PHONY: all help gen-lib build check test test-serde doc docs docs-open \
 	fmt fmt-check lint clippy nix-lint shell-lint \
 	coverage coverage-lcov coverage-check coverage-baseline \
 	bench perf-check perf-baseline perf-compare \
@@ -42,6 +42,9 @@ build: ## Build the workspace (warnings denied via [lints])
 
 test: ## Run unit, integration and doc tests
 	cargo test --workspace
+
+test-serde: ## Run the serde-enabled regression tests (issue #12)
+	cargo test -p comparable_test --features serde --test serde
 
 check: ## Type-check the workspace
 	cargo check --workspace --all-targets
@@ -135,7 +138,7 @@ fuzz-smoke: ## Short fuzz run for CI (needs nightly shell)
 audit: ## Audit dependencies for security advisories
 	cargo audit
 
-ci: fmt-check lint build test doc ## Fast checks (pre-commit / nix flake check)
+ci: fmt-check lint build test test-serde doc ## Fast checks (pre-commit / nix flake check)
 
 clean: ## Remove generated artifacts
 	rm -f lcov.info
