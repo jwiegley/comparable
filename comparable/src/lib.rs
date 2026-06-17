@@ -911,6 +911,8 @@
 //!
 //! Unions cannot derive [`Comparable`] instances at the present time.
 #[doc(hidden)]
+pub mod array;
+#[doc(hidden)]
 pub mod boxes;
 #[doc(hidden)]
 pub mod empty;
@@ -919,11 +921,15 @@ pub mod map;
 #[doc(hidden)]
 pub mod opt;
 #[doc(hidden)]
+pub mod path;
+#[doc(hidden)]
 pub mod scalar;
 #[doc(hidden)]
 pub mod set;
 #[doc(hidden)]
 pub mod string;
+#[doc(hidden)]
+pub mod tuple;
 #[doc(hidden)]
 pub mod types;
 
@@ -931,6 +937,8 @@ pub mod types;
 pub use crate::map::*;
 #[doc(hidden)]
 pub use crate::opt::*;
+#[doc(hidden)]
+pub use crate::path::*;
 #[doc(hidden)]
 pub use crate::scalar::*;
 #[doc(hidden)]
