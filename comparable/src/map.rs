@@ -2,7 +2,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 
-use crate::types::{Changed, Comparable};
+use crate::types::{Changed, Comparable, MaybeSerde};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Debug)]
@@ -12,7 +12,7 @@ pub enum MapChange<Key, Desc, Change> {
 	Removed(Key),
 }
 
-impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for BTreeMap<Key, Value> {
+impl<Key: Ord + Clone + Debug + MaybeSerde, Value: Comparable> Comparable for BTreeMap<Key, Value> {
 	type Desc = BTreeMap<Key, Value::Desc>;
 
 	fn describe(&self) -> Self::Desc {
@@ -59,7 +59,7 @@ fn to_btreemap<K: Clone + Ord, V>(map: &HashMap<K, V>) -> BTreeMap<K, &V> {
 	map.iter().map(|(k, v)| (k.clone(), v)).collect::<BTreeMap<K, &V>>().into_iter().collect()
 }
 
-impl<Key: Ord + Clone + Debug, Value: Comparable> Comparable for HashMap<Key, Value> {
+impl<Key: Ord + Clone + Debug + MaybeSerde, Value: Comparable> Comparable for HashMap<Key, Value> {
 	type Desc = BTreeMap<Key, Value::Desc>;
 
 	fn describe(&self) -> Self::Desc {

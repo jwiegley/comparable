@@ -72,12 +72,39 @@ impl<T> Iterator for Changed<T> {
 	}
 }
 
+/// A bound shared by every [`Comparable::Desc`] and [`Comparable::Change`]
+/// type.
+///
+/// When the `serde` feature is enabled this requires `Serialize` and
+/// `DeserializeOwned`, so that descriptions and change sets can be serialized
+/// even through a generic `T: Comparable` (where the concrete `Desc`/`Change`
+/// types — and therefore their derived serde impls — are not yet known). When
+/// the feature is disabled it is an empty, blanket-implemented marker that adds
+/// no constraint.
+///
+/// This is an implementation detail of the trait's bounds and is not meant to
+/// be named or implemented directly.
+#[cfg(feature = "serde")]
+#[doc(hidden)]
+pub trait MaybeSerde: serde::Serialize + serde::de::DeserializeOwned {}
+#[cfg(feature = "serde")]
+impl<T: serde::Serialize + serde::de::DeserializeOwned> MaybeSerde for T {}
+
+#[cfg(not(feature = "serde"))]
+#[doc(hidden)]
+pub trait MaybeSerde {}
+#[cfg(not(feature = "serde"))]
+impl<T> MaybeSerde for T {}
+
 pub trait Comparable {
 	/// Describes the type under consideration. For types that use
 	/// `#[derive(Comparable)]` this is a mirror of the type itself, where all
 	/// field types refer to the `Comparable::Desc` associated type of the
 	/// original type.
-	type Desc: PartialEq + Debug;
+	///
+	/// With the `serde` feature enabled this type is always `Serialize` and
+	/// `DeserializeOwned`.
+	type Desc: PartialEq + Debug + MaybeSerde;
 
 	/// Describe a value of a type.
 	fn describe(&self) -> Self::Desc;
@@ -86,7 +113,10 @@ pub trait Comparable {
 	/// this type depends on the type being compared, for example, singleton
 	/// struts vary from structs with multiple fields. Please see the [full
 	/// documentation](https://docs.rs/comparable) for more details.
-	type Change: PartialEq + Debug;
+	///
+	/// With the `serde` feature enabled this type is always `Serialize` and
+	/// `DeserializeOwned`.
+	type Change: PartialEq + Debug + MaybeSerde;
 
 	/// Compare two values of a type, reporting whether they differ and what
 	/// the complete set of differences looks like. This is used by the

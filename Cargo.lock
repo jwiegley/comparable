@@ -159,6 +159,7 @@ dependencies = [
  "pretty_assertions",
  "proptest",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

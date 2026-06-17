@@ -21,10 +21,21 @@ path = "test/test.rs"
 name = "generic_enum_test"
 path = "test/generic_enum_test.rs"
 
+[[test]]
+name = "serde"
+path = "test/serde.rs"
+required-features = ["serde"]
+
+[features]
+# Build the test suite (and the `comparable` dependency) with serde support,
+# so the serde regression tests in `test/serde.rs` are compiled and run.
+serde = ["comparable/serde"]
+
 [dev-dependencies]
 pretty_assertions = { workspace = true }
 proptest = "1.0"
 serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0"
 comparable = { workspace = true, features = ["derive"] }
 
 [lints]

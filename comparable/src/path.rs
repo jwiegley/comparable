@@ -1,6 +1,7 @@
 use crate::types::{Changed, Comparable};
 use std::path::{Path, PathBuf};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Debug)]
 pub struct PathBufChange(pub PathBuf, pub PathBuf);
 

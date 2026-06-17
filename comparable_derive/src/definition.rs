@@ -171,6 +171,7 @@ impl Definition {
 				&inputs.attrs,
 				type_name,
 				&change_name,
+				&inputs.input.generics,
 				&inputs.input.data,
 			),
 		}
@@ -202,10 +203,11 @@ impl Definition {
 		attrs: &Attributes,
 		type_name: &syn::Ident,
 		change_name: &syn::Ident,
+		generics: &syn::Generics,
 		data: &syn::Data,
 	) -> TokenStream {
 		match data {
-			syn::Data::Struct(st) => generate_comparison_body_for_structs(change_name, st),
+			syn::Data::Struct(st) => generate_comparison_body_for_structs(change_name, generics, st),
 			syn::Data::Enum(en) => {
 				if en.variants.is_empty() {
 					quote! {
