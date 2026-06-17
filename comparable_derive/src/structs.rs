@@ -85,7 +85,12 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data>
 	}
 }
 
-pub fn generate_comparison_body_for_structs(change_name: &syn::Ident, st: &syn::DataStruct) -> TokenStream {
+pub fn generate_comparison_body_for_structs(
+	change_name: &syn::Ident,
+	generics: &syn::Generics,
+	st: &syn::DataStruct,
+) -> TokenStream {
+	let (_impl_generics, ty_generics, _where_clause) = generics.split_for_impl();
 	let (field_names_and_comparisons, field_variants): (Vec<(TokenStream, TokenStream)>, Vec<syn::Ident>) =
 		map_fields(true, st.fields.iter(), true, |r: &FieldRef| -> ((TokenStream, TokenStream), syn::Ident) {
 			let idx = syn::Index::from(r.index);
@@ -117,7 +122,7 @@ pub fn generate_comparison_body_for_structs(change_name: &syn::Ident, st: &syn::
 		}
 	} else {
 		quote! {
-			let changes: Vec<#change_name> = vec![
+			let changes: Vec<#change_name #ty_generics> = vec![
 				#(#comparisons.map(#change_name::#field_variants)),*
 			]
 				.into_iter()
