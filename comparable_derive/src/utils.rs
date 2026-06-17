@@ -19,6 +19,10 @@ pub fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a 
 	attrs.iter().find(|attr| attr.path.is_ident(attr_name))
 }
 
+pub fn has_attrs<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Vec<&'a syn::Attribute> {
+	attrs.iter().filter(|attr| attr.path.is_ident(attr_name)).collect()
+}
+
 #[allow(dead_code)]
 pub fn data_from_variant(variant: &syn::Variant) -> syn::Data {
 	syn::Data::Struct(syn::DataStruct {
@@ -184,6 +188,7 @@ pub fn generate_type_definition(
 	type_name: &syn::Ident,
 	data: &syn::Data,
 	generics: &syn::Generics,
+	attributes: &[TokenStream],
 ) -> TokenStream {
 	let (impl_generics, _ty_generics, where_clause) = generics.split_for_impl();
 
@@ -294,6 +299,7 @@ pub fn generate_type_definition(
 	quote! {
 		#derive_serde
 		#[derive(PartialEq, Debug)]
+		#(#[#attributes])*
 		#visibility #keyword #type_name#impl_generics#body
 	}
 }
