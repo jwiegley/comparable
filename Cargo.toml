@@ -17,13 +17,13 @@ exclude = ["fuzz"]
 warnings = "deny"
 
 [workspace.package]
-version = "0.5.6"
+version = "0.5.7"
 
 [workspace.dependencies]
-comparable = { version = "0.5.6", path = "comparable" }
-comparable_derive = { version = "0.5.6", path = "comparable_derive" }
-comparable_helper = { version = "0.5.6", path = "comparable_helper" }
-comparable_test = { version = "0.5.6", path = "comparable_test" }
+comparable = { version = "0.5.7", path = "comparable" }
+comparable_derive = { version = "0.5.7", path = "comparable_derive" }
+comparable_helper = { version = "0.5.7", path = "comparable_helper" }
+comparable_test = { version = "0.5.7", path = "comparable_test" }
 
 convert_case = "0.6"
 pretty_assertions = "1.3"

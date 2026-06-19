@@ -42,7 +42,7 @@
         # suite (including doctests) as part of `nix build`.
         comparable = rustPlatform.buildRustPackage {
           pname = "comparable";
-          version = "0.5.6";
+          version = "0.5.7";
           src = self;
           cargoLock.lockFile = ./Cargo.lock;
           nativeBuildInputs = commonNativeBuildInputs;

@@ -13,7 +13,7 @@
 
 with pkgs; rustPlatform.buildRustPackage rec {
   pname = "comparable";
-  version = "0.5.6";
+  version = "0.5.7";
 
   src = ./.;
 
