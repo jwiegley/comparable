@@ -17,7 +17,7 @@ impl<'a> Inputs<'a> {
 		let visibility = if attrs.comparable_private {
 			syn::Visibility::Inherited
 		} else if attrs.comparable_public {
-			syn::Visibility::Public(syn::VisPublic { pub_token: syn::token::Pub { span: Span::call_site() } })
+			syn::Visibility::Public(syn::token::Pub { span: Span::call_site() })
 		} else {
 			input.vis.clone()
 		};

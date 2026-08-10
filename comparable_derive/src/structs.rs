@@ -60,6 +60,7 @@ pub fn create_change_type_for_structs(st: &syn::DataStruct) -> Option<syn::Data>
 							ty: Definition::assoc_type(&r.field.ty, "Change"),
 							attrs: Default::default(),
 							vis: syn::Visibility::Inherited,
+							mutability: syn::FieldMutability::None,
 							ident: Default::default(),
 							colon_token: Default::default(),
 						}]),
