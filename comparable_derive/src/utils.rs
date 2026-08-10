@@ -5,7 +5,7 @@ use std::iter::FromIterator;
 
 pub fn unit_type() -> syn::Type {
 	syn::Type::Tuple(syn::TypeTuple {
-		paren_token: syn::token::Paren { span: proc_macro2::Span::call_site() },
+		paren_token: syn::token::Paren::default(),
 		elems: syn::punctuated::Punctuated::new(),
 	})
 }
@@ -16,11 +16,11 @@ pub fn vec_type(ty: &syn::Type) -> syn::Type {
 }
 
 pub fn has_attr<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Option<&'a syn::Attribute> {
-	attrs.iter().find(|attr| attr.path.is_ident(attr_name))
+	attrs.iter().find(|attr| attr.path().is_ident(attr_name))
 }
 
 pub fn has_attrs<'a>(attrs: &'a [syn::Attribute], attr_name: &str) -> Vec<&'a syn::Attribute> {
-	attrs.iter().filter(|attr| attr.path.is_ident(attr_name)).collect()
+	attrs.iter().filter(|attr| attr.path().is_ident(attr_name)).collect()
 }
 
 #[allow(dead_code)]
@@ -114,7 +114,11 @@ pub fn map_fields<'a, 'b: 'a, R>(
 	fields.into_iter().for_each(|field| {
 		if inject_synthetics {
 			if let Some(synthetics) = has_attr(&field.attrs, "comparable_synthetic").map(|attr| {
-				parse_synthetics(&attr.tokens)
+				let list = attr
+					.meta
+					.require_list()
+					.expect("comparable_synthetic must be given a set of field values in braces");
+				parse_synthetics(&list.tokens)
 					.expect("Argument to comparable_synthetic must be a set of field values in braces")
 			}) {
 				synthetics.into_iter().for_each(|(ident, closure)| {
@@ -128,6 +132,7 @@ pub fn map_fields<'a, 'b: 'a, R>(
 							},
 							attrs: Default::default(),
 							vis: syn::Visibility::Inherited,
+							mutability: syn::FieldMutability::None,
 							colon_token: Default::default(),
 						},
 						accessor: Box::new(move |x| {
@@ -158,16 +163,18 @@ pub fn map_variants<'a, R>(
 }
 
 fn parse_synthetics(tokens: &TokenStream) -> Result<BTreeMap<syn::Ident, syn::ExprClosure>, syn::Error> {
-	let block: syn::Block = syn::parse2(tokens.clone())?;
-	Ok(block
-		.stmts
+	use syn::parse::Parser as _;
+	// In syn 2 the `Meta::List` tokens no longer include the surrounding braces, so parse the
+	// statements directly rather than as a `Block`.
+	let stmts = syn::Block::parse_within.parse2(tokens.clone())?;
+	Ok(stmts
 		.into_iter()
 		.map(|s| {
 			if let syn::Stmt::Local(syn::Local {
 				attrs: _,
 				let_token: _,
 				pat: syn::Pat::Ident(syn::PatIdent { attrs: _, by_ref: _, mutability: _, ident, subpat: _ }),
-				init: Some((_, expr)),
+				init: Some(syn::LocalInit { expr, .. }),
 				semi_token: _,
 			}) = s
 			{

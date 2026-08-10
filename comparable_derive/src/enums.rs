@@ -110,6 +110,7 @@ pub fn create_change_type_for_enums(type_name: &syn::Ident, en: &syn::DataEnum, 
 							ty: Definition::assoc_type(&type_with_generics, "Desc"),
 							attrs: Default::default(),
 							vis: syn::Visibility::Inherited,
+							mutability: syn::FieldMutability::None,
 							colon_token: Default::default(),
 						};
 						syn::FieldsUnnamed {
@@ -183,6 +184,7 @@ pub fn create_change_type_for_enums_with_helpers(
 										ty: vec_type(&fields_change_type_with_generics),
 										attrs: Default::default(),
 										vis: syn::Visibility::Inherited,
+										mutability: syn::FieldMutability::None,
 										colon_token: Default::default(),
 									}]),
 									paren_token: Default::default(),
@@ -206,6 +208,7 @@ pub fn create_change_type_for_enums_with_helpers(
 							ty: Definition::assoc_type(&type_with_generics, "Desc"),
 							attrs: Default::default(),
 							vis: syn::Visibility::Inherited,
+							mutability: syn::FieldMutability::None,
 							colon_token: Default::default(),
 						};
 						syn::FieldsUnnamed {
